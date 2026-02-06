@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>📊 Reporte diario por bloques – {{ fecha.strftime('%d/%m/%Y') }}</h3>
+
+<table class="table table-bordered table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>Empleado</th>
+            <th>Ingreso</th>
+            <th>Salida</th>
+            <th>Horas</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for b in bloques %}
+        <tr>
+            <td>{{ b.empleado.apellido }}, {{ b.empleado.nombre }}</td>
+            <td>{{ b.ingreso.strftime('%H:%M') }}</td>
+            <td>
+                {% if b.salida %}
+                    {{ b.salida.strftime('%H:%M') }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td><strong>{{ b.horas }}</strong></td>
+            <td>
+                {% if b.estado == 'OK' %}
+                    <span class="badge bg-success">OK</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">EN CURSO</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" class="text-center text-muted">
+                No hay registros para hoy
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('asistencias.marcar_asistencia') }}" class="btn btn-secondary">
+    ← Volver
+</a>
+
+{% endblock %}
