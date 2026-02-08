@@ -1,10 +1,11 @@
 from flask import Blueprint, render_template, request
-from app.models import Empleado, Asistencia
 from datetime import datetime, timedelta
 from collections import defaultdict
 from sqlalchemy import extract
-from flask_login import login_required, current_user
+from flask_login import login_required
 
+from app.models import Empleado, Asistencia
+from app.multitenant import empleados_empresa, asistencias_empresa
 
 reportes_bp = Blueprint(
     'reportes',
@@ -30,19 +31,17 @@ def reporte_mensual():
 
     hoy = datetime.now()
 
-    # 🔒 Último mes cerrado por defecto
     primer_dia_mes_actual = hoy.replace(day=1)
     ultimo_dia_mes_anterior = primer_dia_mes_actual - timedelta(days=1)
 
     year = request.args.get('year', ultimo_dia_mes_anterior.year, type=int)
     month = request.args.get('month', ultimo_dia_mes_anterior.month, type=int)
 
-    # 🔐 SOLO datos de la empresa del usuario logueado
+    # 🔒 QUERY MULTITENANT SEGURA
     asistencias = (
-        Asistencia.query
+        asistencias_empresa()
         .join(Empleado)
         .filter(
-            Empleado.empresa_id == current_user.empresa_id,
             extract('year', Asistencia.fecha_hora) == year,
             extract('month', Asistencia.fecha_hora) == month
         )
@@ -50,7 +49,6 @@ def reporte_mensual():
         .all()
     )
 
-    # Agrupar por empleado
     registros_por_empleado = defaultdict(list)
     for a in asistencias:
         registros_por_empleado[a.empleado].append(a)
@@ -58,7 +56,6 @@ def reporte_mensual():
     resumen = []
 
     for empleado, registros in registros_por_empleado.items():
-
         ultimo_ingreso = None
         total_segundos = 0
         dias_trabajados = set()
@@ -82,6 +79,7 @@ def reporte_mensual():
 
             resumen.append({
                 'empleado': empleado,
+                'empleado_id': empleado.id,
                 'horas': f'{horas:02d}:{minutos:02d}',
                 'dias': len(dias_trabajados),
                 'estado': estado
@@ -113,17 +111,13 @@ def detalle_mensual_empleado(empleado_id):
     if not year or not month:
         return "Mes inválido", 400
 
-    # 🔐 empleado debe pertenecer a la empresa del usuario
-    empleado = Empleado.query.filter_by(
-        id=empleado_id,
-        empresa_id=current_user.empresa_id
-    ).first_or_404()
+    # 🔒 EMPLEADO SEGURO POR EMPRESA
+    empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
 
     asistencias = (
-        Asistencia.query
+        asistencias_empresa()
         .filter(
             Asistencia.empleado_id == empleado_id,
-            Asistencia.empresa_id == current_user.empresa_id,
             extract('year', Asistencia.fecha_hora) == year,
             extract('month', Asistencia.fecha_hora) == month
         )

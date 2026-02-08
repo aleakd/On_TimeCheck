@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>➕ Nuevo usuario</h2>
+
+<form method="post" class="card p-4 shadow-sm">
+
+    <div class="mb-3">
+        <label>Email</label>
+        <input name="email" type="email" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Contraseña</label>
+        <input name="password" type="password" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Rol</label>
+        <select name="rol" id="rol" class="form-select">
+            <option value="admin">Admin</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="empleado">Empleado</option>
+        </select>
+    </div>
+
+    <div class="mb-3" id="empleadoBox">
+        <label>Empleado asociado</label>
+        <select name="empleado_id" class="form-select">
+            <option value="">-- Ninguno --</option>
+            {% for e in empleados %}
+            <option value="{{ e.id }}">{{ e.apellido }}, {{ e.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <button class="btn btn-primary w-100">Crear usuario</button>
+</form>
+
+<script>
+document.getElementById('rol').addEventListener('change', function() {
+    document.getElementById('empleadoBox').style.display =
+        this.value === 'empleado' ? 'block' : 'none';
+});
+</script>
+
+{% endblock %}

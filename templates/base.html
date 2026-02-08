@@ -10,22 +10,68 @@
 </head>
 <body class="bg-light">
 
-<<nav class="navbar navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/">⏱ On TimeCheck</a>
-        <div class="d-flex gap-2">
-            <a href="{{ url_for('asistencias.marcar_asistencia') }}" class="btn btn-outline-light btn-sm">
-                Asistencias
-            </a>
-            <a href="{{ url_for('reportes.index') }}" class="btn btn-outline-light btn-sm">
-                Reportes
-            </a>
-            <a href="{{ url_for('empleados.lista_empleados') }}" class="btn btn-outline-light btn-sm">
-                Empleados
-            </a>
-        </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <div class="container">
+
+    <a class="navbar-brand fw-bold" href="/reportes">
+        ⏱ OnTimeCheck
+    </a>
+
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="menu" class="collapse navbar-collapse">
+
+        <ul class="navbar-nav me-auto">
+
+            <!-- ASISTENCIAS -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    ⏱ Asistencias
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/asistencias">Marcar asistencia</a></li>
+                    <li><a class="dropdown-item" href="/asistencias/reporte-diario">Reporte diario</a></li>
+                </ul>
+            </li>
+
+            <!-- REPORTES -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    📊 Reportes
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/reportes">Panel de reportes</a></li>
+                    <li><a class="dropdown-item" href="/reportes/mensual">Reporte mensual</a></li>
+                </ul>
+            </li>
+
+            <!-- PERSONAL -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    👥 Personal
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/empleados">Empleados</a></li>
+                    <li><a class="dropdown-item" href="/usuarios">Usuarios</a></li>
+                </ul>
+            </li>
+
+        </ul>
+
+        <span class="navbar-text text-light me-3">
+            👤 {{ current_user.email }}
+        </span>
+
+        <a href="/logout" class="btn btn-outline-light btn-sm">
+            Cerrar sesión
+        </a>
+
     </div>
+  </div>
 </nav>
+
 
 
 <div class="container mt-3">
