@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- ENCABEZADO -->
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">On TimeCheck</h1>
+        <p class="text-muted">
+            Control simple, claro y profesional de ingresos y salidas
+        </p>
+    </div>
+
+    <!-- ACCIONES PRINCIPALES -->
+    <div class="row g-4">
+
+        <!-- ASISTENCIAS -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <h5 class="card-title">🕒 Registrar asistencia</h5>
+                    <p class="card-text text-muted">
+                        Marcá ingresos y salidas de forma rápida y segura.
+                    </p>
+                    <a href="{{ url_for('asistencias.marcar_asistencia') }}"
+                       class="btn btn-primary">
+                        Ir a asistencias
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- EMPLEADOS -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <h5 class="card-title">👥 Empleados</h5>
+                    <p class="card-text text-muted">
+                        Administrá el personal activo de la empresa.
+                    </p>
+                    <a href="{{ url_for('empleados.lista_empleados') }}"
+                       class="btn btn-secondary">
+                        Ver empleados
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- REPORTES -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <h5 class="card-title">📊 Reporte diario</h5>
+                    <p class="card-text text-muted">
+                        Consultá horas trabajadas y estados del día.
+                    </p>
+                    <a href="{{ url_for('asistencias.reporte_diario') }}"
+                       class="btn btn-outline-dark">
+                        Ver reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

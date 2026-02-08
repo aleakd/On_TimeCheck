@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>📊 Reportes</h3>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <a href="{{ url_for('reportes.reporte_mensual') }}" class="card card-body text-decoration-none shadow-sm">
+            <h5>📅 Reporte mensual</h5>
+            <p class="text-muted">Horas trabajadas por empleado</p>
+        </a>
+    </div>
+    <div class="col-md-6">
+        <a href="{{ url_for('asistencias.reporte_diario') }}" class="card card-body text-decoration-none shadow-sm">
+            <h5>🕒 Reporte diario</h5>
+            <p class="text-muted">Detalle del día actual</p>
+        </a>
+    </div>
+</div>
+
+{% endblock %}

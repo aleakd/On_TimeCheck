@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h4>📌 {{ empleado.apellido }}, {{ empleado.nombre }}</h4>
+<p class="text-muted">Detalle diario – {{ fecha.strftime('%d/%m/%Y') }}</p>
+
+<table class="table table-bordered table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>Ingreso</th>
+            <th>Salida</th>
+            <th>Horas</th>
+            <th>Actividad</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for b in bloques %}
+        <tr>
+            <td>{{ b.ingreso.strftime('%H:%M') }}</td>
+            <td>{{ b.salida.strftime('%H:%M') if b.salida else '-' }}</td>
+            <td><strong>{{ b.horas }}</strong></td>
+            <td>{{ b.actividad }}</td>
+            <td>
+                {% if b.estado == 'OK' %}
+                    <span class="badge bg-success">OK</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Incompleto</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" class="text-center text-muted">
+                No hay bloques registrados hoy
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('asistencias.reporte_diario') }}"
+   class="btn btn-secondary">
+    ← Volver al resumen diario
+</a>
+
+{% endblock %}
