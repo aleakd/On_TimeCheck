@@ -10,67 +10,49 @@
 </head>
 <body class="bg-light">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-  <div class="container">
+<nav class="navbar navbar-dark bg-dark navbar-expand-lg">
+    <div class="container-fluid">
 
-    <a class="navbar-brand fw-bold" href="/reportes">
-        ⏱ OnTimeCheck
-    </a>
+        <a class="navbar-brand" href="/reportes">⏱ OnTimeCheck</a>
 
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto">
 
-    <div id="menu" class="collapse navbar-collapse">
+                {% if current_user.is_authenticated %}
 
-        <ul class="navbar-nav me-auto">
+                    <!-- ADMIN Y SUPERVISOR -->
+                    {% if current_user.rol in ['admin','supervisor'] %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/asistencias">🕒 Asistencias</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reportes">📊 Reportes</a>
+                    </li>
+                    {% endif %}
 
-            <!-- ASISTENCIAS -->
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                    ⏱ Asistencias
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/asistencias">Marcar asistencia</a></li>
-                    <li><a class="dropdown-item" href="/asistencias/reporte-diario">Reporte diario</a></li>
-                </ul>
-            </li>
+                    <!-- SOLO ADMIN -->
+                    {% if current_user.rol == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/empleados">👥 Empleados</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/usuarios">🔐 Usuarios</a>
+                    </li>
+                    {% endif %}
 
-            <!-- REPORTES -->
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                    📊 Reportes
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/reportes">Panel de reportes</a></li>
-                    <li><a class="dropdown-item" href="/reportes/mensual">Reporte mensual</a></li>
-                </ul>
-            </li>
+                {% endif %}
+            </ul>
 
-            <!-- PERSONAL -->
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                    👥 Personal
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/empleados">Empleados</a></li>
-                    <li><a class="dropdown-item" href="/usuarios">Usuarios</a></li>
-                </ul>
-            </li>
-
-        </ul>
-
-        <span class="navbar-text text-light me-3">
-            👤 {{ current_user.email }}
-        </span>
-
-        <a href="/logout" class="btn btn-outline-light btn-sm">
-            Cerrar sesión
-        </a>
-
+            {% if current_user.is_authenticated %}
+                <span class="navbar-text text-light me-3">
+                    {{ current_user.email }} | {{ current_user.rol }}
+                </span>
+                <a href="/logout" class="btn btn-outline-light btn-sm">Salir</a>
+            {% endif %}
+        </div>
     </div>
-  </div>
 </nav>
+
 
 
 

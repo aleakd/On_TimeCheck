@@ -1,7 +1,7 @@
-from flask import Flask
+from flask import Flask, render_template
 from app.models import db
 from flask_login import LoginManager
-
+from flask_login import current_user
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -15,6 +15,11 @@ def create_app():
 
     db.init_app(app)
     login_manager.init_app(app)
+
+    # 👇 permitir usar current_user en todos los templates
+    @app.context_processor
+    def inject_user():
+        return dict(current_user=current_user)
 
 
 #-------------------------------------------------------------------------------------------------------
@@ -47,6 +52,13 @@ def create_app():
     # 🔑 ESTA ES LA CLAVE
     with app.app_context():
         db.create_all()
+
+    # ==============================
+    # PAGINA 403 PERSONALIZADA
+    # ==============================
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template("403.html"), 403
 
     return app
 

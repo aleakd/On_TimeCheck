@@ -4,6 +4,7 @@ from app.models import Empleado, db
 from app.multitenant import empleados_empresa
 from app.roles import solo_admin, admin_o_supervisor
 
+
 empleados_bp = Blueprint('empleados', __name__, url_prefix='/empleados')
 
 

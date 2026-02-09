@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from sqlalchemy import extract
 from flask_login import login_required
-
+from app.roles import solo_admin, admin_o_supervisor
 from app.models import Empleado, Asistencia
 from app.multitenant import empleados_empresa, asistencias_empresa
 
@@ -27,6 +27,7 @@ def index():
 # =========================================================
 @reportes_bp.route('/mensual')
 @login_required
+@admin_o_supervisor
 def reporte_mensual():
 
     hoy = datetime.now()

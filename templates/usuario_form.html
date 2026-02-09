@@ -1,47 +1,31 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>➕ Nuevo usuario</h2>
+<h3>Nuevo usuario</h3>
 
-<form method="post" class="card p-4 shadow-sm">
+<form method="POST">
 
     <div class="mb-3">
         <label>Email</label>
-        <input name="email" type="email" class="form-control" required>
+        <input name="email" class="form-control">
     </div>
 
     <div class="mb-3">
         <label>Contraseña</label>
-        <input name="password" type="password" class="form-control" required>
+        <input type="password" name="password" class="form-control">
     </div>
 
     <div class="mb-3">
         <label>Rol</label>
-        <select name="rol" id="rol" class="form-select">
+        <select name="rol" class="form-control">
             <option value="admin">Admin</option>
             <option value="supervisor">Supervisor</option>
             <option value="empleado">Empleado</option>
         </select>
     </div>
 
-    <div class="mb-3" id="empleadoBox">
-        <label>Empleado asociado</label>
-        <select name="empleado_id" class="form-select">
-            <option value="">-- Ninguno --</option>
-            {% for e in empleados %}
-            <option value="{{ e.id }}">{{ e.apellido }}, {{ e.nombre }}</option>
-            {% endfor %}
-        </select>
-    </div>
+    <button class="btn btn-primary">Crear usuario</button>
 
-    <button class="btn btn-primary w-100">Crear usuario</button>
 </form>
-
-<script>
-document.getElementById('rol').addEventListener('change', function() {
-    document.getElementById('empleadoBox').style.display =
-        this.value === 'empleado' ? 'block' : 'none';
-});
-</script>
 
 {% endblock %}

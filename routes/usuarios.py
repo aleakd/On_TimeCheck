@@ -96,3 +96,35 @@ def toggle_usuario(id):
     flash(f'Usuario {estado}', 'info')
 
     return redirect(url_for('usuarios.lista_usuarios'))
+
+# =====================================
+# EDITAR USUARIO (ROL + PASSWORD)
+# =====================================
+@usuarios_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+@solo_admin
+def editar_usuario(id):
+
+    usuario = Usuario.query.filter_by(
+        id=id,
+        empresa_id=current_user.empresa_id
+    ).first_or_404()
+
+    if request.method == 'POST':
+
+        rol = request.form.get('rol')
+        password = request.form.get('password')
+
+        # actualizar rol
+        usuario.rol = rol
+
+        # cambiar password SOLO si se escribió algo
+        if password:
+            usuario.password_hash = generate_password_hash(password)
+
+        db.session.commit()
+        flash("Usuario actualizado correctamente", "success")
+        return redirect(url_for('usuarios.lista_usuarios'))
+
+    return render_template("usuario_edit.html", usuario=usuario)
+

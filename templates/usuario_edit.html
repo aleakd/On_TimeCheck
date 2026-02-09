@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>Editar usuario</h3>
+
+<form method="POST">
+
+    <div class="mb-3">
+        <label>Email</label>
+        <input value="{{ usuario.email }}" class="form-control" disabled>
+    </div>
+
+    <div class="mb-3">
+        <label>Nuevo password (opcional)</label>
+        <input type="password" name="password" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Rol</label>
+        <select name="rol" class="form-control">
+
+            <option value="admin" {% if usuario.rol=='admin' %}selected{% endif %}>Admin</option>
+            <option value="supervisor" {% if usuario.rol=='supervisor' %}selected{% endif %}>Supervisor</option>
+            <option value="empleado" {% if usuario.rol=='empleado' %}selected{% endif %}>Empleado</option>
+
+        </select>
+    </div>
+
+    <button class="btn btn-primary">Guardar cambios</button>
+
+</form>
+
+{% endblock %}
