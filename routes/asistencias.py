@@ -4,6 +4,7 @@ from app.models import db, Empleado, Asistencia
 from app.multitenant import empleados_empresa, asistencias_empresa
 from datetime import datetime
 from collections import defaultdict
+from app.security import requiere_ip_empresa
 
 asistencias_bp = Blueprint(
     'asistencias',
@@ -16,6 +17,7 @@ asistencias_bp = Blueprint(
 # =========================
 @asistencias_bp.route('/', methods=['GET', 'POST'])
 @login_required
+@requiere_ip_empresa   # 👈 NUEVO
 def marcar_asistencia():
     # 👇 detectar si es usuario empleado
     modo_empleado = current_user.rol == 'empleado'

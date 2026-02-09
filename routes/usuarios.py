@@ -42,11 +42,30 @@ def nuevo_usuario():
         activo=True
     ).order_by(Empleado.apellido).all()
 
+    # 🚨 UX IMPORTANTE: no se pueden crear usuarios empleados sin empleados
+    if request.method == 'GET' and not empleados:
+        flash('Primero debes crear empleados antes de crear usuarios de tipo empleado', 'warning')
+
     if request.method == 'POST':
         email = request.form.get('email').lower().strip()
         password = request.form.get('password')
         rol = request.form.get('rol')
         empleado_id = request.form.get('empleado_id') or None
+        # 🚨 BUGFIX CRÍTICO
+        # No permitir crear usuario EMPLEADO sin empleado vinculado
+        if rol == 'empleado' and not empleado_id:
+            flash('Debe seleccionar un empleado para usuarios de tipo EMPLEADO', 'danger')
+            return redirect(url_for('usuarios.nuevo_usuario'))
+        # 🔐 seguridad multiempresa
+        if empleado_id:
+            empleado = Empleado.query.filter_by(
+                id=empleado_id,
+                empresa_id=current_user.empresa_id
+            ).first()
+
+            if not empleado:
+                flash('Empleado inválido', 'danger')
+                return redirect(url_for('usuarios.nuevo_usuario'))
 
         if not email or not password or not rol:
             flash('Todos los campos son obligatorios', 'danger')
@@ -98,7 +117,7 @@ def toggle_usuario(id):
     return redirect(url_for('usuarios.lista_usuarios'))
 
 # =====================================
-# EDITAR USUARIO (ROL + PASSWORD)
+# EDITAR USUARIO (ROL + PASSWORD + EMPLEADO)
 # =====================================
 @usuarios_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -110,13 +129,31 @@ def editar_usuario(id):
         empresa_id=current_user.empresa_id
     ).first_or_404()
 
+    # 🔹 empleados disponibles para vincular
+    empleados = Empleado.query.filter_by(
+        empresa_id=current_user.empresa_id,
+        activo=True
+    ).order_by(Empleado.apellido).all()
+
     if request.method == 'POST':
 
         rol = request.form.get('rol')
         password = request.form.get('password')
+        empleado_id = request.form.get('empleado_id') or None
+
+        # 🔐 Validación importante SaaS
+        if rol == 'empleado' and not empleado_id:
+            flash("Debes seleccionar un empleado para este usuario", "danger")
+            return redirect(url_for('usuarios.editar_usuario', id=id))
 
         # actualizar rol
         usuario.rol = rol
+
+        # actualizar vínculo empleado
+        if rol == 'empleado':
+            usuario.empleado_id = empleado_id
+        else:
+            usuario.empleado_id = None
 
         # cambiar password SOLO si se escribió algo
         if password:
@@ -126,5 +163,10 @@ def editar_usuario(id):
         flash("Usuario actualizado correctamente", "success")
         return redirect(url_for('usuarios.lista_usuarios'))
 
-    return render_template("usuario_edit.html", usuario=usuario)
+    return render_template(
+        "usuario_edit.html",
+        usuario=usuario,
+        empleados=empleados
+    )
+
 

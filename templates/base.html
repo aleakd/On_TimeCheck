@@ -13,7 +13,7 @@
 <nav class="navbar navbar-dark bg-dark navbar-expand-lg">
     <div class="container-fluid">
 
-        <a class="navbar-brand" href="/reportes">⏱ OnTimeCheck</a>
+        <a class="navbar-brand" href="/">⏱ OnTimeCheck</a>
 
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto">
@@ -35,9 +35,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/empleados">👥 Empleados</a>
                     </li>
+
                     <li class="nav-item">
                         <a class="nav-link" href="/usuarios">🔐 Usuarios</a>
                     </li>
+
                     {% endif %}
 
                 {% endif %}
@@ -45,8 +47,14 @@
 
             {% if current_user.is_authenticated %}
                 <span class="navbar-text text-light me-3">
-                    {{ current_user.email }} | {{ current_user.rol }}
+                    {{ current_user.email }} | {{ current_user.rol }} | 🏢 {{ g.empresa.nombre }}
                 </span>
+            {% if current_user.is_authenticated and current_user.rol == 'admin' %}
+    <a href="/empresa/configuracion" class="btn btn-outline-light btn-sm ms-2">
+        Empresa
+    </a>
+{% endif %}
+
                 <a href="/logout" class="btn btn-outline-light btn-sm">Salir</a>
             {% endif %}
         </div>

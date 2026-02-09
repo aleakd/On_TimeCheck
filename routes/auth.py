@@ -28,7 +28,8 @@ def login():
             return redirect(url_for('auth.login'))
 
         login_user(user)
-        return redirect(url_for('reportes.index'))
+        return redirect(url_for('main.dashboard'))
+
 
     return render_template('login.html')
 #________________________________________________________________________________________________________________-

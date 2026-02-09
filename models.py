@@ -9,12 +9,15 @@ db = SQLAlchemy()
 # =========================
 class Empresa(db.Model):
     __tablename__ = 'empresa'
-
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     activa = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # 🔐 SEGURIDAD RED
+    ip_publica = db.Column(db.String(50), nullable=True)
+    ip_rango = db.Column(db.String(50), nullable=True)
 
+    usuarios = db.relationship('Usuario', backref='empresa', lazy=True)
     empleados = db.relationship('Empleado', backref='empresa', lazy=True)
     asistencias = db.relationship('Asistencia', backref='empresa', lazy=True)
 
@@ -106,13 +109,8 @@ class Usuario(UserMixin, db.Model):
     activo = db.Column(db.Boolean, default=True)
     empleado_id = db.Column(db.Integer, db.ForeignKey('empleado.id'), nullable=True)
     empleado = db.relationship('Empleado')
-
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    empresa = db.relationship(
-        'Empresa',
-        backref=db.backref('usuarios', lazy=True)
-    )
 
     def __repr__(self):
         return f'<Usuario {self.email}>'

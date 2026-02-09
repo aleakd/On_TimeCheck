@@ -1,33 +1,72 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h3>Editar usuario</h3>
+<h3>✏️ Editar usuario</h3>
 
-<form method="POST">
+<form method="POST" class="card shadow-sm p-4">
 
     <div class="mb-3">
-        <label>Email</label>
+        <label class="form-label">Email</label>
         <input value="{{ usuario.email }}" class="form-control" disabled>
     </div>
 
     <div class="mb-3">
-        <label>Nuevo password (opcional)</label>
+        <label class="form-label">Nueva contraseña (opcional)</label>
         <input type="password" name="password" class="form-control">
+        <div class="form-text">
+            Solo completar si deseas cambiarla
+        </div>
     </div>
 
+    <!-- ROL -->
     <div class="mb-3">
-        <label>Rol</label>
-        <select name="rol" class="form-control">
-
-            <option value="admin" {% if usuario.rol=='admin' %}selected{% endif %}>Admin</option>
+        <label class="form-label">Rol</label>
+        <select name="rol" id="rol" class="form-select" required>
+            <option value="admin" {% if usuario.rol=='admin' %}selected{% endif %}>Administrador</option>
             <option value="supervisor" {% if usuario.rol=='supervisor' %}selected{% endif %}>Supervisor</option>
             <option value="empleado" {% if usuario.rol=='empleado' %}selected{% endif %}>Empleado</option>
-
         </select>
     </div>
 
-    <button class="btn btn-primary">Guardar cambios</button>
+    <!-- EMPLEADO -->
+    <div class="mb-3" id="empleado-box">
+        <label class="form-label">Empleado vinculado</label>
+        <select name="empleado_id" class="form-select">
+            <option value="">Sin vincular</option>
+
+            {% for e in empleados %}
+                <option value="{{ e.id }}"
+                    {% if usuario.empleado_id == e.id %}selected{% endif %}>
+                    {{ e.apellido }}, {{ e.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <div class="form-text">
+            Obligatorio solo si el rol es EMPLEADO
+        </div>
+    </div>
+
+    <button class="btn btn-primary w-100">
+        Guardar cambios
+    </button>
 
 </form>
+
+<script>
+const rolSelect = document.getElementById('rol');
+const empleadoBox = document.getElementById('empleado-box');
+
+function toggleEmpleado() {
+    if (rolSelect.value === 'empleado') {
+        empleadoBox.style.display = 'block';
+    } else {
+        empleadoBox.style.display = 'none';
+    }
+}
+
+toggleEmpleado(); // ejecutar al cargar
+rolSelect.addEventListener('change', toggleEmpleado);
+</script>
 
 {% endblock %}

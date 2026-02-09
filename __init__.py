@@ -1,7 +1,9 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, g
 from app.models import db
-from flask_login import LoginManager
-from flask_login import current_user
+from flask_login import LoginManager,current_user
+from app.models import Empresa
+
+
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -45,13 +47,23 @@ def create_app():
     from app.routes.usuarios import usuarios_bp
     app.register_blueprint(usuarios_bp)
 
+    from app.routes.empresa import empresa_bp
+    app.register_blueprint(empresa_bp)
+
     # -------------------------------------------------------------------------------------------------------
-
-
-
     # 🔑 ESTA ES LA CLAVE
     with app.app_context():
         db.create_all()
+
+    # ==========================================
+    # CARGAR EMPRESA EN CADA REQUEST (MULTITENANT)
+    # ==========================================
+    @app.before_request
+    def cargar_empresa():
+        if current_user.is_authenticated:
+            g.empresa = Empresa.query.get(current_user.empresa_id)
+        else:
+            g.empresa = None
 
     # ==============================
     # PAGINA 403 PERSONALIZADA
@@ -59,6 +71,11 @@ def create_app():
     @app.errorhandler(403)
     def forbidden(e):
         return render_template("403.html"), 403
+
+
+
+
+
 
     return app
 

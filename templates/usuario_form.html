@@ -1,31 +1,64 @@
 {% extends "base.html" %}
+
 {% block content %}
 
-<h3>Nuevo usuario</h3>
+<h3>👤 Nuevo usuario</h3>
 
-<form method="POST">
+<form method="post" class="card shadow-sm p-4">
 
     <div class="mb-3">
-        <label>Email</label>
-        <input name="email" class="form-control">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" required>
     </div>
 
     <div class="mb-3">
-        <label>Contraseña</label>
-        <input type="password" name="password" class="form-control">
+        <label class="form-label">Contraseña</label>
+        <input type="password" name="password" class="form-control" required>
     </div>
 
     <div class="mb-3">
-        <label>Rol</label>
-        <select name="rol" class="form-control">
-            <option value="admin">Admin</option>
+        <label class="form-label">Rol</label>
+        <select name="rol" id="rol" class="form-select" required>
+            <option value="">Seleccione</option>
+            <option value="admin">Administrador</option>
             <option value="supervisor">Supervisor</option>
             <option value="empleado">Empleado</option>
         </select>
     </div>
 
-    <button class="btn btn-primary">Crear usuario</button>
+    <!-- 👇 SELECT EMPLEADO (SOLO PARA ROL EMPLEADO) -->
+    <div class="mb-3" id="empleado-box" style="display:none;">
+        <label class="form-label">Empleado vinculado</label>
+        <select name="empleado_id" class="form-select">
+            <option value="">Seleccione empleado</option>
+            {% for e in empleados %}
+                <option value="{{ e.id }}">
+                    {{ e.apellido }}, {{ e.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+        <div class="form-text">
+            Solo obligatorio si el rol es EMPLEADO
+        </div>
+    </div>
+
+    <button class="btn btn-primary w-100">
+        Crear usuario
+    </button>
 
 </form>
+
+<script>
+const rolSelect = document.getElementById('rol');
+const empleadoBox = document.getElementById('empleado-box');
+
+rolSelect.addEventListener('change', function() {
+    if (this.value === 'empleado') {
+        empleadoBox.style.display = 'block';
+    } else {
+        empleadoBox.style.display = 'none';
+    }
+});
+</script>
 
 {% endblock %}
