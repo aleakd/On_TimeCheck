@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-4">👋 Bienvenido a OnTimeCheck</h2>
+
+<div class="row g-4">
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <h4>⏱</h4>
+                <h5>Asistencias</h5>
+                <p class="text-muted">Registrar ingresos y salidas</p>
+                <a href="/asistencias" class="btn btn-primary w-100">
+                    Ir a asistencias
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <h4>📊</h4>
+                <h5>Reportes</h5>
+                <p class="text-muted">Horas trabajadas y estadísticas</p>
+                <a href="/reportes/mensual" class="btn btn-success w-100">
+                    Ver reportes
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <h4>👥</h4>
+                <h5>Personal</h5>
+                <p class="text-muted">Gestionar empleados y usuarios</p>
+                <a href="/empleados" class="btn btn-dark w-100">
+                    Gestionar personal
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

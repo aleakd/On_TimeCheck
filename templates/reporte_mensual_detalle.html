@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h4>📌 {{ empleado.apellido }}, {{ empleado.nombre }}</h4>
+<p class="text-muted">Detalle mensual – {{ nombre_mes }}</p>
+
+<table class="table table-bordered table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>Fecha</th>
+            <th>Ingreso</th>
+            <th>Salida</th>
+            <th>Horas</th>
+            <th>Actividad</th>
+            <th>Bloque</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in detalle %}
+        <tr>
+            <td>{{ d.fecha.strftime('%d/%m/%Y') }}</td>
+            <td>{{ d.ingreso.strftime('%H:%M') if d.ingreso else '-' }}</td>
+            <td>{{ d.salida.strftime('%H:%M') if d.salida else '-' }}</td>
+            <td><strong>{{ d.horas }}</strong></td>
+            <td>{{ d.actividad }}</td>
+            <td class="text-center">{{ d.bloque }}</td>
+
+            <td>
+                {% if d.estado == 'OK' %}
+                    <span class="badge bg-success">OK</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Incompleto</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6" class="text-center text-muted">
+                Sin registros
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('reportes.reporte_mensual', year=year, month=month) }}"
+   class="btn btn-secondary">
+    ← Volver al resumen mensual
+</a>
+
+{% endblock %}
