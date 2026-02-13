@@ -38,8 +38,6 @@ def create_app():
     from app.routes.asistencias import asistencias_bp
     app.register_blueprint(asistencias_bp)
 
-    from app.routes.debug import debug_bp
-    app.register_blueprint(debug_bp)
 
     from app.routes.auth import auth_bp
     app.register_blueprint(auth_bp)
