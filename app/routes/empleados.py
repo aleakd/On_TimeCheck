@@ -1,27 +1,32 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app.models import Empleado, db
-from app.context import get_empresa_activa
 from flask_login import login_required, current_user
+from app.models import Empleado, db
+from app.multitenant import empleados_empresa
+from app.roles import solo_admin, admin_o_supervisor
 
 
 empleados_bp = Blueprint('empleados', __name__, url_prefix='/empleados')
 
 
+# =========================
+# LISTA EMPLEADOS
+# =========================
 @empleados_bp.route('/')
+@login_required
+@admin_o_supervisor
 def lista_empleados():
-    empresa = get_empresa_activa()
-
-    empleados = (
-        Empleado.query
-        .filter_by(empresa_id=current_user.empresa_id)
-        .order_by(Empleado.apellido)
-        .all()
-    )
+    empleados = empleados_empresa().order_by(Empleado.apellido).all()
     return render_template('empleados.html', empleados=empleados)
 
 
+# =========================
+# NUEVO EMPLEADO
+# =========================
 @empleados_bp.route('/nuevo', methods=['GET', 'POST'])
+@login_required
+@admin_o_supervisor
 def nuevo_empleado():
+
     if request.method == 'POST':
         dni = request.form.get('dni', '').strip()
         apellido = request.form.get('apellido', '').strip()
@@ -31,12 +36,8 @@ def nuevo_empleado():
             flash('Todos los campos son obligatorios', 'danger')
             return redirect(url_for('empleados.nuevo_empleado'))
 
-        #empresa = get_empresa_activa()
-
-        existe = Empleado.query.filter_by(
-            empresa_id=current_user.empresa_id,
-            dni=dni
-        ).first()
+        # 🔒 validar DNI dentro de la empresa del usuario
+        existe = empleados_empresa().filter_by(dni=dni).first()
         if existe:
             flash('Ya existe un empleado con ese DNI', 'warning')
             return redirect(url_for('empleados.nuevo_empleado'))
@@ -58,12 +59,16 @@ def nuevo_empleado():
     return render_template('empleado_form.html')
 
 
+# =========================
+# ACTIVAR / DESACTIVAR
+# =========================
 @empleados_bp.route('/toggle/<int:id>')
+@login_required
+@admin_o_supervisor
 def toggle_empleado(id):
-    empleado = Empleado.query.filter_by(
-        id=id,
-        empresa_id=current_user.empresa_id
-    ).first_or_404()
+
+    # 🔒 seguridad SaaS real
+    empleado = empleados_empresa().filter_by(id=id).first_or_404()
 
     empleado.activo = not empleado.activo
     db.session.commit()
