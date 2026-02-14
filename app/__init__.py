@@ -2,7 +2,7 @@ from flask import Flask, render_template, g
 from app.models import db
 from flask_login import LoginManager,current_user
 from app.models import Empresa, Asistencia, Usuario, AuditLog
-
+import os
 
 
 login_manager = LoginManager()
@@ -15,7 +15,13 @@ print("🔥 INIT FILE PATH:", __file__)
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'on_timecheck_secret'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///on_timecheck.db'
+    database_url = os.getenv("DATABASE_URL")
+
+    if database_url:
+        # Render usa postgres:// y SQLAlchemy necesita postgresql://
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///on_timecheck.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     app.config['TEMPLATES_AUTO_RELOAD'] = True
