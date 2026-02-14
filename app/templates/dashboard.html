@@ -40,7 +40,8 @@
 
 <div class="card shadow-sm p-4">
     <h4 class="mb-3">📈 Horas trabajadas por día (mes actual)</h4>
-    <canvas id="horasChart2"></canvas>
+    <canvas id="horasChart"></canvas>
+
 </div>
 
 
@@ -83,31 +84,40 @@
 
 
 <script>
-const ctx = document.getElementById('horasChart');
+const canvas = document.getElementById('horasChart');
 
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: {{ chart_labels|tojson }},
-        datasets: [{
-            label: 'Horas trabajadas',
-            data: {{ chart_data|tojson }},
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: {
-            y: {
-                beginAtZero: true,
-                title: {
-                    display: true,
-                    text: 'Horas'
+if (canvas) {
+    const ctx = canvas.getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|tojson }},
+            datasets: [{
+                label: 'Horas trabajadas',
+                data: {{ chart_data|tojson }},
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Horas'
+                    }
                 }
             }
         }
-    }
-});
+    });
+}
 </script>
-<p>df</p>
+
+    <br>
+<br>
 {% endblock %}

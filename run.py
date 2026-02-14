@@ -1,5 +1,11 @@
 from app import create_app
 
+import app, inspect
+print("APP MODULE PATH REAL:", inspect.getfile(app))
+import sys
+print("PYTHON EXECUTABLE:", sys.executable)
+
+
 app = create_app()
 
 if __name__ == '__main__':

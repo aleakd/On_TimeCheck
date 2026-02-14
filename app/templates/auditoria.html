@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-4">🧾 Historial del sistema</h2>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        <table class="table table-sm table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Fecha</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Entidad</th>
+                    <th>Descripción</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ log.usuario.email if log.usuario else '-' }}</td>
+                    <td><strong>{{ log.accion }}</strong></td>
+                    <td>{{ log.entidad }}</td>
+                    <td>{{ log.descripcion }}</td>
+                    <td>{{ log.ip }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        No hay eventos registrados
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+{% endblock %}

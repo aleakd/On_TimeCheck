@@ -5,6 +5,7 @@ from app.multitenant import empleados_empresa, asistencias_empresa
 from datetime import datetime
 from collections import defaultdict
 from app.security import requiere_ip_empresa
+from app.audit import registrar_evento
 
 asistencias_bp = Blueprint(
     'asistencias',
@@ -17,7 +18,7 @@ asistencias_bp = Blueprint(
 # =========================
 @asistencias_bp.route('/', methods=['GET', 'POST'])
 @login_required
-@requiere_ip_empresa   # 👈 NUEVO
+@requiere_ip_empresa
 def marcar_asistencia():
     # 👇 detectar si es usuario empleado
     modo_empleado = current_user.rol == 'empleado'
@@ -85,6 +86,13 @@ def marcar_asistencia():
 
         db.session.add(asistencia)
         db.session.commit()
+        empleado = Empleado.query.get(empleado_id)
+
+        registrar_evento(
+            accion="CREAR",
+            entidad="ASISTENCIA",
+            descripcion=f"{tipo} | {empleado.apellido}, {empleado.nombre} | Actividad: {actividad or '-'}"
+        )
 
         flash('✅ Asistencia registrada correctamente', 'success')
         return redirect(url_for('asistencias.marcar_asistencia'))
@@ -101,6 +109,7 @@ def marcar_asistencia():
 # =========================
 @asistencias_bp.route('/reporte-diario')
 @login_required
+@requiere_ip_empresa
 def reporte_diario_bloques():
 
     hoy = datetime.now().date()

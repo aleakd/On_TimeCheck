@@ -4,7 +4,7 @@ from app.models import Empleado, Asistencia, db
 from datetime import datetime
 from sqlalchemy import extract
 from app.multitenant import empleados_empresa, asistencias_empresa
-
+from collections import defaultdict
 main_bp = Blueprint('main', __name__)
 
 
@@ -72,7 +72,7 @@ def dashboard():
     # ==========================================
     # 📈 HORAS POR DÍA (GRÁFICO)
     # ==========================================
-    from collections import defaultdict
+
 
     horas_por_dia = defaultdict(int)
     ultimo_ingreso = {}

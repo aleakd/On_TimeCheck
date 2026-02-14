@@ -30,10 +30,13 @@
                     </li>
                     {% endif %}
 
-                    <!-- SOLO ADMIN -->
+                    <!-- SOLO ADMINw -->
                     {% if current_user.rol == 'admin' %}
                     <li class="nav-item">
                         <a class="nav-link" href="/empleados">👥 Empleados</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auditoria">🧾 Auditoría</a>
                     </li>
 
                     <li class="nav-item">

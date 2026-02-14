@@ -3,6 +3,27 @@
 
 <h2 class="mb-4">🏢 Configuración de Empresa</h2>
 
+<div class="alert alert-info">
+    🌐 <strong>Tu IP actual:</strong> {{ ip_actual }}
+    <br>
+    Usá esta IP si querés restringir el fichaje a tu red.
+</div>
+{% if seguridad_activa %}
+<div class="alert alert-success">
+    🔐 Seguridad de red ACTIVA
+    <br>
+    Solo se permiten registros desde la red autorizada
+</div>
+{% else %}
+<div class="alert alert-danger">
+    ⚠️ Seguridad de red DESACTIVADA
+    <br>
+    Cualquier ubicación puede registrar asistencias
+</div>
+{% endif %}
+
+
+
 <div class="card shadow-sm">
     <div class="card-body">
 

@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 from app import login_manager
 from app.models import Usuario, Empresa, db
+from app.audit import registrar_evento
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -28,6 +29,12 @@ def login():
             return redirect(url_for('auth.login'))
 
         login_user(user)
+        registrar_evento(
+            "LOGIN",
+            f"Inicio de sesión: {user.email}",
+            "USUARIO"
+        )
+
         return redirect(url_for('main.dashboard'))
 
 

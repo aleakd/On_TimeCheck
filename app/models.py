@@ -114,3 +114,32 @@ class Usuario(UserMixin, db.Model):
 
     def __repr__(self):
         return f'<Usuario {self.email}>'
+
+# =========================
+    # AUDITORÍA DEL SISTEMA
+    # ========================
+class AuditLog(db.Model):
+    __tablename__ = 'audit_log'
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey('empresa.id'),
+        nullable=False
+    )
+    usuario_id = db.Column(
+        db.Integer,
+        db.ForeignKey('usuario.id'),
+        nullable=True
+    )
+    accion = db.Column(db.String(100), nullable=False)
+    entidad = db.Column(db.String(50), nullable=False)
+    descripcion = db.Column(db.Text, nullable=True)
+    ip = db.Column(db.String(50), nullable=True)
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+    usuario = db.relationship('Usuario')
+    def __repr__(self):
+        return f'<AuditLog {self.accion} - {self.entidad}>'

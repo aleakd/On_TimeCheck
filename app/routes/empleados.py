@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.models import Empleado, db
 from app.multitenant import empleados_empresa
 from app.roles import solo_admin, admin_o_supervisor
+from app.audit import registrar_evento
 
 
 empleados_bp = Blueprint('empleados', __name__, url_prefix='/empleados')
@@ -53,6 +54,13 @@ def nuevo_empleado():
         db.session.add(empleado)
         db.session.commit()
 
+        # 📝 AUDITORIA
+        registrar_evento(
+            accion="CREAR",
+            entidad="EMPLEADO",
+            descripcion=f"Empleado creado: {apellido}, {nombre} - DNI {dni}"
+        )
+
         flash('Empleado creado correctamente', 'success')
         return redirect(url_for('empleados.lista_empleados'))
 
@@ -74,6 +82,13 @@ def toggle_empleado(id):
     db.session.commit()
 
     estado = 'activado' if empleado.activo else 'desactivado'
+
+    # 📝 AUDITORIA
+    registrar_evento(
+        accion="EDITAR",
+        entidad="EMPLEADO",
+        descripcion=f"Empleado {estado}: {empleado.apellido}, {empleado.nombre} (ID {empleado.id})"
+    )
     flash(f'Empleado {estado} correctamente', 'info')
 
     return redirect(url_for('empleados.lista_empleados'))

@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from app.roles import solo_admin
 from app.models import Usuario, Empleado, db
+from app.audit import registrar_evento
 
 
 usuarios_bp = Blueprint(
@@ -88,6 +89,13 @@ def nuevo_usuario():
         db.session.add(usuario)
         db.session.commit()
 
+        # 📝 AUDITORIA SEGURIDAD
+        registrar_evento(
+            accion="CREAR",
+            entidad="USUARIO",
+            descripcion=f"Usuario creado: {email} | Rol: {rol}"
+        )
+
         flash('Usuario creado correctamente', 'success')
         return redirect(url_for('usuarios.lista_usuarios'))
 
@@ -112,6 +120,14 @@ def toggle_usuario(id):
     db.session.commit()
 
     estado = 'activado' if usuario.activo else 'desactivado'
+
+    # 📝 AUDITORIA SEGURIDAD
+    registrar_evento(
+        accion="EDITAR",
+        entidad="USUARIO",
+        descripcion=f"Usuario {estado}: {usuario.email}"
+    )
+
     flash(f'Usuario {estado}', 'info')
 
     return redirect(url_for('usuarios.lista_usuarios'))
@@ -160,6 +176,13 @@ def editar_usuario(id):
             usuario.password_hash = generate_password_hash(password)
 
         db.session.commit()
+
+        # 📝 AUDITORIA SEGURIDAD
+        registrar_evento(
+            accion="EDITAR",
+            entidad="USUARIO",
+            descripcion=f"Usuario modificado: {usuario.email} | Nuevo rol: {usuario.rol}"
+        )
         flash("Usuario actualizado correctamente", "success")
         return redirect(url_for('usuarios.lista_usuarios'))
 

@@ -1,19 +1,25 @@
 from flask import Flask, render_template, g
 from app.models import db
 from flask_login import LoginManager,current_user
-from app.models import Empresa
+from app.models import Empresa, Asistencia, Usuario, AuditLog
 
 
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 
+import os
+print("🔥 APP RUNNING FROM:", os.getcwd())
+print("🔥 INIT FILE PATH:", __file__)
 
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'on_timecheck_secret'
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///on_timecheck.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['EXPLAIN_TEMPLATE_LOADING'] = True
 
     db.init_app(app)
     login_manager.init_app(app)
@@ -49,6 +55,9 @@ def create_app():
 
     from app.routes.empresa import empresa_bp
     app.register_blueprint(empresa_bp)
+
+    from app.routes.auditoria import auditoria_bp
+    app.register_blueprint(auditoria_bp)
 
 
 
