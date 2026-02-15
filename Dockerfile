@@ -10,4 +10,5 @@ COPY . .
 
 ENV PORT=10000
 
-CMD gunicorn run:app --bind 0.0.0.0:$PORT
+CMD gunicorn "run:create_app()" --bind 0.0.0.0:$PORT
+
