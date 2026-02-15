@@ -3,15 +3,11 @@ from app.models import db
 from flask_login import LoginManager,current_user
 from app.models import Empresa, Asistencia, Usuario, AuditLog
 import os
-from app.routes.debug import debug_bp
+
 
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
-
-import os
-print("🔥 APP RUNNING FROM:", os.getcwd())
-print("🔥 INIT FILE PATH:", __file__)
 
 def create_app():
     app = Flask(__name__)
@@ -31,12 +27,6 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
 
-    app.register_blueprint(debug_bp)
-
-
-
-
-
 #-------------------------------------------------------------------------------------------------------
 
     from app.routes.empleados import empleados_bp
@@ -51,8 +41,6 @@ def create_app():
     from app.routes.asistencias import asistencias_bp
     app.register_blueprint(asistencias_bp)
 
-
-
     from app.routes.auth import auth_bp
     app.register_blueprint(auth_bp)
 
@@ -61,9 +49,6 @@ def create_app():
 
     from app.routes.empresa import empresa_bp
     app.register_blueprint(empresa_bp)
-
-
-
 
 
     # -------------------------------------------------------------------------------------------------------
@@ -87,9 +72,6 @@ def create_app():
     @app.errorhandler(403)
     def forbidden(e):
         return render_template("403.html"), 403
-
-
-
 
 
 

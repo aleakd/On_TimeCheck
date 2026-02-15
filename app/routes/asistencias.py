@@ -101,7 +101,7 @@ def marcar_asistencia():
         'asistencias.html',
         empleados=empleados,
         asistencias_hoy=asistencias_hoy,
-        DEBUG_DEPLOY="CAMBIO_RENDER_OK_123"
+
     )
 
 

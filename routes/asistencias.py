@@ -17,7 +17,7 @@ asistencias_bp = Blueprint(
 # =========================
 @asistencias_bp.route('/', methods=['GET', 'POST'])
 @login_required
-#@requiere_ip_empresa   # 👈 NUEVO
+@requiere_ip_empresa   # 👈 NUEVO
 def marcar_asistencia():
     # 👇 detectar si es usuario empleado
     modo_empleado = current_user.rol == 'empleado'
