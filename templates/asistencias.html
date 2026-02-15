@@ -40,9 +40,24 @@
         </select>
     </div>
 
+    {% if current_user.rol == "admin" %}
+    <hr>
+    <h5>Carga manual (admin)</h5>
+
+    <label>Fecha</label>
+    <input type="date" name="fecha_manual" class="form-control">
+
+    <label>Hora</label>
+    <input type="time" name="hora_manual" class="form-control">
+    {% endif %}
+
     <button class="btn btn-primary w-100">
         Registrar
     </button>
+
+
+
+
 
 </form>
 

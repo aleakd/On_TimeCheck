@@ -46,6 +46,10 @@ def marcar_asistencia():
         tipo = request.form.get('tipo')
         actividad = request.form.get('actividad')
 
+        # 👇 campos manuales (solo admin)
+        fecha_manual = request.form.get("fecha_manual")
+        hora_manual = request.form.get("hora_manual")
+
         if not empleado_id or tipo not in ['INGRESO', 'SALIDA']:
             flash('❌ Datos inválidos', 'danger')
             return redirect(url_for('asistencias.marcar_asistencia'))
@@ -75,12 +79,23 @@ def marcar_asistencia():
                 flash('❌ No se puede marcar SALIDA sin un INGRESO previo', 'warning')
                 return redirect(url_for('asistencias.marcar_asistencia'))
 
+        # =============================
+        # ⏰ FECHA/HORA INTELIGENTE
+        # =============================
+        if current_user.rol == "admin" and fecha_manual and hora_manual:
+            fecha_hora = datetime.strptime(
+                f"{fecha_manual} {hora_manual}",
+                "%Y-%m-%d %H:%M"
+            )
+        else:
+            fecha_hora = datetime.now()
+
         asistencia = Asistencia(
             empleado_id=empleado_id,
             empresa_id=current_user.empresa_id,
             tipo=tipo,
             actividad=actividad if tipo == 'INGRESO' else None,
-            fecha_hora=datetime.now()
+            fecha_hora=fecha_hora
         )
 
         db.session.add(asistencia)
