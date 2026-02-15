@@ -100,7 +100,8 @@ def marcar_asistencia():
     return render_template(
         'asistencias.html',
         empleados=empleados,
-        asistencias_hoy=asistencias_hoy
+        asistencias_hoy=asistencias_hoy,
+        DEBUG_DEPLOY="CAMBIO_RENDER_OK_123"
     )
 
 
