@@ -33,10 +33,8 @@ def create_app():
 
     app.register_blueprint(debug_bp)
 
-    # 👇 permitir usar current_user en todos los templates
-    @app.context_processor
-    def inject_user():
-        return dict(current_user=current_user)
+
+
 
 
 #-------------------------------------------------------------------------------------------------------
