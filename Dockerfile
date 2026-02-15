@@ -4,7 +4,8 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
+# 👇 rompe cache de docker en cada deploy
+COPY build_version.txt .
 COPY . .
 
 ENV PORT=10000
