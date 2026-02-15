@@ -12,3 +12,6 @@ def debug_empresa():
         return '❌ No hay empresa activa'
 
     return f'✅ Empresa activa: ID={empresa.id} | Nombre={empresa.nombre}'
+@debug_bp.route("/debug-deploy")
+def debug_deploy():
+    return "DEPLOY NUEVO FUNCIONANDO 2026 🚀"

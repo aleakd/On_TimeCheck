@@ -3,6 +3,7 @@ from app.models import db
 from flask_login import LoginManager,current_user
 from app.models import Empresa, Asistencia, Usuario, AuditLog
 import os
+from app.routes.debug import debug_bp
 
 
 login_manager = LoginManager()
@@ -30,6 +31,8 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
 
+    app.register_blueprint(debug_bp)
+
     # 👇 permitir usar current_user en todos los templates
     @app.context_processor
     def inject_user():
@@ -50,8 +53,7 @@ def create_app():
     from app.routes.asistencias import asistencias_bp
     app.register_blueprint(asistencias_bp)
 
-    from app.routes.debug import debug_bp
-    app.register_blueprint(debug_bp)
+
 
     from app.routes.auth import auth_bp
     app.register_blueprint(auth_bp)
@@ -62,8 +64,7 @@ def create_app():
     from app.routes.empresa import empresa_bp
     app.register_blueprint(empresa_bp)
 
-    from app.routes.auditoria import auditoria_bp
-    app.register_blueprint(auditoria_bp)
+
 
 
 
