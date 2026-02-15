@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% block title %}Inicio OTC{% endblock %}
 {% block content %}
 
 <h2 class="mb-4">📊 Dashboard</h2>
@@ -36,15 +35,6 @@
 
 </div>
 
-<hr class="my-5">
-
-<div class="card shadow-sm p-4">
-    <h4 class="mb-3">📈 Horas trabajadas por día (mes actual)</h4>
-    <canvas id="horasChart"></canvas>
-
-</div>
-
-
 <hr class="my-4">
 
 <h4>⚡ Accesos rápidos</h4>
@@ -77,47 +67,4 @@
 
 </div>
 
-
-
-
-
-
-
-<script>
-const canvas = document.getElementById('horasChart');
-
-if (canvas) {
-    const ctx = canvas.getContext('2d');
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: {{ chart_labels|tojson }},
-            datasets: [{
-                label: 'Horas trabajadas',
-                data: {{ chart_data|tojson }},
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Horas'
-                    }
-                }
-            }
-        }
-    });
-}
-</script>
-
-    <br>
-<br>
 {% endblock %}

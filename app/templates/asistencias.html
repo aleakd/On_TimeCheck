@@ -1,8 +1,12 @@
+<h1 style="color:red">TEMPLATE NUEVO 🚨</h1>
+
 {% extends "base.html" %}
+
 
 {% block content %}
 
-<h2 class="mb-4">🕒 Asistencias</h2>
+<h2 class="mb-4">🕒 Asistenciass</h2>
+<h1 style="color:red">{{ DEBUG_DEPLOY }}</h1>
 
 <form method="post" class="card shadow-sm p-4">
 
@@ -40,9 +44,24 @@
         </select>
     </div>
 
+    {% if current_user.rol == "admin" %}
+    <hr>
+    <h5>Carga manual (admin)</h5>
+
+    <label>Fecha</label>
+    <input type="date" name="fecha_manual" class="form-control">
+
+    <label>Hora</label>
+    <input type="time" name="hora_manual" class="form-control">
+    {% endif %}
+
     <button class="btn btn-primary w-100">
         Registrar
     </button>
+
+
+
+
 
 </form>
 
