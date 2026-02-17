@@ -19,10 +19,12 @@
         <tr>
             <td>{{ r.empleado.apellido }}, {{ r.empleado.nombre }}</td>
             <td>
-                {{ r.ingreso.strftime('%H:%M') if r.ingreso else '-' }}
+                {{ r.ingreso | hora_ar | strftime('%H:%M') if r.ingreso else '-' }}
+
             </td>
             <td>
-                {{ r.salida.strftime('%H:%M') if r.salida else '-' }}
+                {{ r.salida | hora_ar | strftime('%H:%M') if r.salida else '-' }}
+
             </td>
             <td><strong>{{ r.horas }}</strong></td>
             <td>

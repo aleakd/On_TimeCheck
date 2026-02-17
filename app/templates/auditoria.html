@@ -21,7 +21,7 @@
             <tbody>
                 {% for log in logs %}
                 <tr>
-                    <td>{{ log.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ log.created_at | hora_ar | strftime('%d/%m/%Y %H:%M') }}</td>
                     <td>{{ log.usuario.email if log.usuario else '-' }}</td>
                     <td><strong>{{ log.accion }}</strong></td>
                     <td>{{ log.entidad }}</td>
