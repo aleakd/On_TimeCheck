@@ -7,6 +7,7 @@ from app.multitenant import empleados_empresa, asistencias_empresa
 from collections import defaultdict
 main_bp = Blueprint('main', __name__)
 
+from sqlalchemy import text
 
 # ==========================================
 # DASHBOARD PRINCIPAL
@@ -107,3 +108,27 @@ def dashboard():
         chart_labels=labels,
         chart_data=data
     )
+
+
+
+
+
+# ==========================================
+# 🔧 MANTENIMIENTO TEMPORAL DB (BORRAR LUEGO)
+# ==========================================
+@main_bp.route('/fix-db-timezone')
+def fix_db_timezone():
+
+    comandos = [
+        "ALTER TABLE asistencia ALTER COLUMN fecha_hora TYPE TIMESTAMP WITH TIME ZONE;",
+        "ALTER TABLE empresa ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE;",
+        "ALTER TABLE usuario ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE;",
+        "ALTER TABLE audit_log ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE;"
+    ]
+
+    for sql in comandos:
+        db.session.execute(text(sql))
+
+    db.session.commit()
+
+    return "DB timezone fixed ✅"

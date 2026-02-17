@@ -1,6 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_login import UserMixin
+from sqlalchemy.sql import func
+
 db = SQLAlchemy()
 
 
@@ -12,7 +14,10 @@ class Empresa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     activa = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        server_default=func.now()
+    )
     # 🔐 SEGURIDAD RED
     ip_publica = db.Column(db.String(50), nullable=True)
     ip_rango = db.Column(db.String(50), nullable=True)
@@ -80,8 +85,8 @@ class Asistencia(db.Model):
     )
 
     fecha_hora = db.Column(
-        db.DateTime,
-        default=datetime.utcnow,
+        db.DateTime(timezone=True),
+        server_default=func.now(),
         nullable=False
     )
 
@@ -109,8 +114,10 @@ class Usuario(UserMixin, db.Model):
     activo = db.Column(db.Boolean, default=True)
     empleado_id = db.Column(db.Integer, db.ForeignKey('empleado.id'), nullable=True)
     empleado = db.relationship('Empleado')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        server_default=func.now()
+    )
 
     def __repr__(self):
         return f'<Usuario {self.email}>'
@@ -136,10 +143,11 @@ class AuditLog(db.Model):
     descripcion = db.Column(db.Text, nullable=True)
     ip = db.Column(db.String(50), nullable=True)
     created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow,
+        db.DateTime(timezone=True),
+        server_default=func.now(),
         nullable=False
     )
+
     usuario = db.relationship('Usuario')
     def __repr__(self):
         return f'<AuditLog {self.accion} - {self.entidad}>'
