@@ -6,6 +6,7 @@ from flask_login import login_required
 from app.roles import solo_admin, admin_o_supervisor
 from app.models import Empleado, Asistencia, db
 from app.multitenant import empleados_empresa, asistencias_empresa
+from app.utils.timezone import ahora_argentina, ARG_TZ
 
 MESES_ES = [
     "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -35,7 +36,8 @@ def index():
 @admin_o_supervisor
 def reporte_mensual():
 
-    hoy = datetime.now()
+    hoy = ahora_argentina()
+
 
     primer_dia_mes_actual = hoy.replace(day=1)
     ultimo_dia_mes_anterior = primer_dia_mes_actual - timedelta(days=1)
@@ -193,7 +195,8 @@ def detalle_mensual_empleado(empleado_id):
 @admin_o_supervisor
 def reporte_diario():
 
-    hoy = datetime.now().date()
+    hoy = ahora_argentina().date()
+
 
     asistencias = (
         asistencias_empresa()
@@ -258,7 +261,8 @@ def reporte_diario():
 @admin_o_supervisor
 def reporte_diario_bloques():
 
-    hoy = datetime.now().date()
+    hoy = ahora_argentina().date()
+
 
     asistencias = (
         asistencias_empresa()
