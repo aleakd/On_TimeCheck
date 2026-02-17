@@ -110,25 +110,3 @@ def dashboard():
     )
 
 
-
-
-
-# ==========================================
-# 🔧 MANTENIMIENTO TEMPORAL DB (BORRAR LUEGO)
-# ==========================================
-@main_bp.route('/fix-db-timezone')
-def fix_db_timezone():
-
-    comandos = [
-        "ALTER TABLE asistencia ALTER COLUMN fecha_hora TYPE TIMESTAMP WITH TIME ZONE;",
-        "ALTER TABLE empresa ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE;",
-        "ALTER TABLE usuario ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE;",
-        "ALTER TABLE audit_log ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE;"
-    ]
-
-    for sql in comandos:
-        db.session.execute(text(sql))
-
-    db.session.commit()
-
-    return "DB timezone fixed ✅"

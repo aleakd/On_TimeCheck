@@ -1,10 +1,9 @@
 from flask import Flask, render_template, g
 from app.models import db
-from flask_login import LoginManager,current_user
+from flask_login import LoginManager, current_user
 from app.models import Empresa, Asistencia, Usuario, AuditLog
 import os
-
-
+from zoneinfo import ZoneInfo
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -20,15 +19,23 @@ def create_app():
 
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///on_timecheck.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.config['EXPLAIN_TEMPLATE_LOADING'] = True
 
     db.init_app(app)
     login_manager.init_app(app)
 
-#-------------------------------------------------------------------------------------------------------
+    # ==========================================
+    # 🕒 FILTRO GLOBAL HORA ARGENTINA (CLAVE)
+    # ==========================================
+    def convertir_a_argentina(fecha):
+        if fecha is None:
+            return ""
+        return fecha.astimezone(ZoneInfo("America/Argentina/Buenos_Aires"))
 
+    app.jinja_env.filters['hora_ar'] = convertir_a_argentina
+
+    # -------------------------------------------------------------------------------------------------------
     from app.routes.empleados import empleados_bp
     app.register_blueprint(empleados_bp)
 
@@ -53,10 +60,8 @@ def create_app():
     from app.routes.auditoria import auditoria_bp
     app.register_blueprint(auditoria_bp)
 
-
-
     # -------------------------------------------------------------------------------------------------------
-    # 🔑 ESTA ES LA CLAVE
+    # 🔑 CREAR TABLAS SI NO EXISTEN
     with app.app_context():
         db.create_all()
 
@@ -77,7 +82,4 @@ def create_app():
     def forbidden(e):
         return render_template("403.html"), 403
 
-
-
     return app
-
