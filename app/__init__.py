@@ -50,6 +50,10 @@ def create_app():
     from app.routes.empresa import empresa_bp
     app.register_blueprint(empresa_bp)
 
+    from app.routes.auditoria import auditoria_bp
+    app.register_blueprint(auditoria_bp)
+
+
 
     # -------------------------------------------------------------------------------------------------------
     # 🔑 ESTA ES LA CLAVE

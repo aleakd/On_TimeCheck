@@ -6,7 +6,7 @@
 <div class="card shadow-sm">
     <div class="card-body">
 
-        <table class="table table-sm table-striped">
+        <table class="table table-sm table-striped" id="tabla_audit">
             <thead class="table-dark">
                 <tr>
                     <th>Fecha</th>
@@ -41,4 +41,11 @@
     </div>
 </div>
 
+
+<script>
+    $(document).ready(function () {
+        $('#tabla_audit').DataTable();
+
+    });
+</script>
 {% endblock %}

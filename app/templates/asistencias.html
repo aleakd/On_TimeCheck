@@ -25,11 +25,13 @@
         <label class="form-label">Actividad</label>
         <select name="actividad" id="actividad" class="form-select">
             <option value="">Seleccione</option>
-            <option value="Administración">Administración</option>
-            <option value="Operativo">Operativo</option>
-            <option value="Guardia">Guardia</option>
+            <option value="Trabajo operativo">Trabajo operativo</option>
+            <option value="Tareas administrativas">Tareas administrativas</option>
+            <option value="Atención al cliente">Atención al cliente</option>
+            <option value="Reuniones internas">Reuniones internas</option>
             <option value="Capacitación">Capacitación</option>
-            <option value="Otro">Otro</option>
+            <option value="Trabajo en campo">Trabajo en campo / visitas</option>
+            <option value="Horas extra">Horas extra / soporte</option>
         </select>
     </div>
 
@@ -88,7 +90,8 @@
                 {% endif %}
             </td>
             <td>{{ a.actividad }}</td>
-            <td>{{ a.fecha_hora.strftime('%H:%M:%S') }}</td>
+            <td>{{ a.fecha_hora.astimezone().strftime('%H:%M') }}
+</td>
         </tr>
         {% else %}
         <tr>

@@ -1,70 +1,148 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="mb-4">📊 Dashboard</h2>
+<!-- ===============================
+     CABECERA INTELIGENTE
+================================ -->
+<div class="mb-4">
+    <h2>📊 Panel de control</h2>
 
-<div class="row">
+    {% if current_user.rol == 'admin' %}
+        <p class="text-muted">Estado general de tu empresa hoy</p>
+    {% elif current_user.rol == 'supervisor' %}
+        <p class="text-muted">Seguimiento de actividad del equipo</p>
+    {% else %}
+        <p class="text-muted">Tu jornada laboral</p>
+    {% endif %}
+</div>
 
-    <div class="col-md-3">
-        <div class="card shadow-sm p-3">
-            <h5>👥 Empleados activos</h5>
-            <h2>{{ total_empleados }}</h2>
-        </div>
+
+<!-- ===============================
+     MÉTRICAS PRINCIPALES
+================================ -->
+<div class="stats-grid mb-5">
+
+    {% if current_user.rol != 'empleado' %}
+    <div class="stat-card">
+        <div class="stat-number">{{ total_empleados }}</div>
+        <div class="stat-label">Empleados activos</div>
+    </div>
+    {% endif %}
+
+    <div class="stat-card">
+        <div class="stat-number">{{ asistencias_hoy }}</div>
+        <div class="stat-label">Registros hoy</div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card shadow-sm p-3">
-            <h5>🕒 Registros hoy</h5>
-            <h2>{{ asistencias_hoy }}</h2>
-        </div>
+    {% if current_user.rol != 'empleado' %}
+    <div class="stat-card">
+        <div class="stat-number">{{ trabajando }}</div>
+        <div class="stat-label">Trabajando ahora</div>
     </div>
+    {% endif %}
 
-    <div class="col-md-3">
-        <div class="card shadow-sm p-3">
-            <h5>👷 Trabajando ahora</h5>
-            <h2>{{ trabajando }}</h2>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card shadow-sm p-3">
-            <h5>⏱ Horas del mes</h5>
-            <h2>{{ horas_mes }}</h2>
-        </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ horas_mes }}</div>
+        <div class="stat-label">Horas del mes</div>
     </div>
 
 </div>
 
-<hr class="my-4">
 
-<h4>⚡ Accesos rápidos</h4>
+<!-- ===============================
+     GRÁFICO TENDENCIA
+================================ -->
+<div class="card shadow-sm p-4 mb-5">
+    <h4 class="mb-3">📈 Horas trabajadas por día (mes actual)</h4>
+    <canvas id="horasChart"></canvas>
+</div>
 
-<div class="row mt-3">
 
-    <div class="col-md-3">
-        <a href="/asistencias" class="btn btn-primary w-100 p-3">
+<!-- ===============================
+     ACCESOS RÁPIDOS SEGÚN ROL
+================================ -->
+<h4 class="mb-3">⚡ Accesos rápidos</h4>
+
+<div class="row">
+
+    <div class="col-md-3 mb-3">
+        <a href="/asistencias" class="btn btn-primary w-100 p-4">
             🕒 Registrar asistencia
         </a>
     </div>
 
-    <div class="col-md-3">
-        <a href="/reportes/mensual" class="btn btn-success w-100 p-3">
-            📅 Reporte mensual
+    {% if current_user.rol in ['admin','supervisor'] %}
+    <div class="col-md-3 mb-3">
+        <a href="/asistencias/reporte-diario" class="btn btn-success w-100 p-4">
+            📅 Reporte diario
         </a>
     </div>
 
-    <div class="col-md-3">
-        <a href="/empleados" class="btn btn-warning w-100 p-3">
+    <div class="col-md-3 mb-3">
+        <a href="/reportes/mensual" class="btn btn-success w-100 p-4">
+            📊 Reporte mensual
+        </a>
+    </div>
+    {% endif %}
+
+    {% if current_user.rol == 'admin' %}
+    <div class="col-md-3 mb-3">
+        <a href="/empleados" class="btn btn-warning w-100 p-4">
             👥 Empleados
         </a>
     </div>
 
-    <div class="col-md-3">
-        <a href="/usuarios" class="btn btn-dark w-100 p-3">
+    <div class="col-md-3 mb-3">
+        <a href="/usuarios" class="btn btn-dark w-100 p-4">
             🔐 Usuarios
         </a>
     </div>
 
+    <div class="col-md-3 mb-3">
+        <a href="/empresa/configuracion" class="btn btn-secondary w-100 p-4">
+            🏢 Empresa
+        </a>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <a href="/auditoria" class="btn btn-danger w-100 p-4">
+            📜 Auditoría
+        </a>
+    </div>
+    {% endif %}
+
 </div>
+
+
+<!-- ===============================
+     SCRIPT GRÁFICO
+================================ -->
+<script>
+const ctx = document.getElementById('horasChart');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: {{ chart_labels|tojson }},
+        datasets: [{
+            label: 'Horas trabajadas',
+            data: {{ chart_data|tojson }},
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Horas'
+                }
+            }
+        }
+    }
+});
+</script>
 
 {% endblock %}

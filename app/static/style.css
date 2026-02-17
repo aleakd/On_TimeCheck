@@ -1,0 +1,272 @@
+/* =====================================================
+   ONTIMECHECK – SaaS UI KIT
+   ===================================================== */
+
+/* ===== VARIABLES ===== */
+:root {
+  --primary: #2563EB;
+  --secondary: #38BDF8;
+  --light-blue: #E0F2FE;
+  --background: #F8FAFC;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --white: #FFFFFF;
+  --border: #E5E7EB;
+}
+
+/* ===== RESET ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background);
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  color: var(--text-main);
+  line-height: 1.6;
+}
+.titulo{
+font-family:'Playwrite NZ Basic';
+font-weight: 400;
+}
+
+/* ===== BRAND / LOGO ===== */
+.brand-otc{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+/* el logo deja de afectar la altura del navbar */
+.brand-otc img{
+  position:absolute;
+  left:0;
+  top:50%;
+  transform:translateY(-50%);
+  width:240px;          /* tamaño real del logo */
+  border-radius:18px;   /* esquinas redondeadas */
+}
+
+/* espacio artificial para que el texto no se superponga */
+.brand-otc .titulo{
+  margin-left:190px;
+  font-family:'Playwrite NZ Basic';
+  font-size:26px;
+  color:white;
+  line-height:1;
+}
+
+
+/* ===== NAVBAR ===== */
+.navbar {
+  background: linear-gradient(135deg, #38BDF8, #2563EB);
+  padding: 27px 28px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.navbar-brand {
+  color: white;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+  margin-left: 20px;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.navbar a:hover {
+  opacity: 0.85;
+}
+
+/* ===== CONTAINERS ===== */
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 40px 20px;
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  margin-bottom: 25px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+/* ===== BOTONES ===== */
+.btn {
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.25s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1e4ed8;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: white;
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+/* ===== FORMULARIOS ===== */
+.form-group {
+  margin-bottom: 18px;
+}
+
+label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+input, select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-top: 6px;
+  font-size: 15px;
+  transition: 0.2s;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(56,189,248,0.2);
+}
+
+/* ===== TABLAS ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+th {
+  background: var(--light-blue);
+  padding: 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+td {
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+tr:hover {
+  background: #f1f5f9;
+}
+
+/* ===== DASHBOARD STATS ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #38BDF8, #2563EB);
+  color: white;
+  padding: 25px;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.stat-number {
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.stat-label {
+  opacity: 0.9;
+  margin-top: 5px;
+}
+
+/* ===== LOGIN / AUTH ===== */
+.auth-container {
+  max-width: 420px;
+  margin: 80px auto;
+}
+
+.auth-title {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.auth-link {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.auth-link a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ===== ALERTAS ===== */
+.alert {
+  padding: 14px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.alert-success { background: #DCFCE7; color: #166534; }
+.alert-error { background: #FEE2E2; color: #991B1B; }
+.alert-warning { background: #FEF3C7; color: #92400E; }
+
+/* ===== FOOTER ===== */
+.footer {
+  text-align: center;
+  padding: 80px;
+  background-color: #074557;
+  font-size: 22px;
+  color:white;
+}

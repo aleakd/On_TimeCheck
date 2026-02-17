@@ -6,6 +6,8 @@ from datetime import datetime
 from collections import defaultdict
 from app.security import requiere_ip_empresa
 from app.audit import registrar_evento
+from app.utils.timezone import ahora_argentina, ARG_TZ
+
 
 asistencias_bp = Blueprint(
     'asistencias',
@@ -39,63 +41,99 @@ def marcar_asistencia():
     )
 
     if request.method == 'POST':
-        if modo_empleado:
-            empleado_id = current_user.empleado_id
-        else:
-            empleado_id = request.form.get('empleado_id')
+        if request.method == 'POST':
 
-        tipo = request.form.get('tipo')
-        actividad = request.form.get('actividad')
+            # ==============================
+            # DATOS FORM
+            # ==============================
+            if modo_empleado:
+                empleado_id = current_user.empleado_id
+            else:
+                empleado_id = request.form.get('empleado_id')
 
-        if not empleado_id or tipo not in ['INGRESO', 'SALIDA']:
-            flash('❌ Datos inválidos', 'danger')
+            tipo = request.form.get('tipo')
+            actividad = request.form.get('actividad')
+
+            # 👇 NUEVO — CAMPOS MANUALES ADMIN
+            fecha_manual = request.form.get("fecha_manual")
+            hora_manual = request.form.get("hora_manual")
+
+            if not empleado_id or tipo not in ['INGRESO', 'SALIDA']:
+                flash('❌ Datos inválidos', 'danger')
+                return redirect(url_for('asistencias.marcar_asistencia'))
+
+            if tipo == 'INGRESO' and not actividad:
+                flash('⚠️ Debe seleccionar una actividad para el INGRESO', 'warning')
+                return redirect(url_for('asistencias.marcar_asistencia'))
+
+            # ==============================
+            # ⏰ FECHA INTELIGENTE
+            # ==============================
+            if current_user.rol == "admin" and fecha_manual and hora_manual:
+                fecha_hora = ARG_TZ.localize(
+                    datetime.strptime(
+                        f"{fecha_manual} {hora_manual}",
+                        "%Y-%m-%d %H:%M"
+                    )
+                )
+            else:
+                fecha_hora = ahora_argentina()
+
+
+            # ==============================
+            # 🔒 VALIDACIÓN TEMPORAL CORRECTA
+            # busca la última asistencia ANTERIOR a la que estoy cargando
+            # ==============================
+            ultima = (
+                asistencias_empresa()
+                .filter(
+                    Asistencia.empleado_id == empleado_id,
+                    Asistencia.fecha_hora < fecha_hora
+                )
+                .order_by(Asistencia.fecha_hora.desc())
+                .first()
+            )
+
+            if ultima:
+                if ultima.tipo == 'INGRESO' and tipo == 'INGRESO':
+                    flash('❌ El empleado ya tenía un INGRESO activo en ese momento', 'warning')
+                    return redirect(url_for('asistencias.marcar_asistencia'))
+
+                if ultima.tipo == 'SALIDA' and tipo == 'SALIDA':
+                    flash('❌ No puede haber dos SALIDAS seguidas en esa fecha', 'warning')
+                    return redirect(url_for('asistencias.marcar_asistencia'))
+            else:
+                if tipo == 'SALIDA':
+                    flash('❌ No puede cargar una SALIDA sin un INGRESO previo', 'warning')
+                    return redirect(url_for('asistencias.marcar_asistencia'))
+
+            # ==============================
+            # 💾 GUARDAR
+            # ==============================
+            asistencia = Asistencia(
+                empleado_id=empleado_id,
+                empresa_id=current_user.empresa_id,
+                tipo=tipo,
+                actividad=actividad if tipo == 'INGRESO' else None,
+                fecha_hora=fecha_hora
+            )
+
+            db.session.add(asistencia)
+            db.session.commit()
+
+            # ==============================
+            # 🧾 AUDITORÍA
+            # ==============================
+            empleado = Empleado.query.get(empleado_id)
+
+            registrar_evento(
+                accion="CREAR",
+                entidad="ASISTENCIA",
+                descripcion=f"{tipo} | {empleado.apellido}, {empleado.nombre} | Fecha: {fecha_hora}"
+            )
+
+            flash('✅ Asistencia registrada correctamente', 'success')
             return redirect(url_for('asistencias.marcar_asistencia'))
-
-        if tipo == 'INGRESO' and not actividad:
-            flash('⚠️ Debe seleccionar una actividad para el INGRESO', 'warning')
-            return redirect(url_for('asistencias.marcar_asistencia'))
-
-        # 🔒 última asistencia segura por empresa
-        ultima = (
-            asistencias_empresa()
-            .filter_by(empleado_id=empleado_id)
-            .order_by(Asistencia.fecha_hora.desc())
-            .first()
-        )
-
-        if ultima:
-            if ultima.tipo == 'INGRESO' and tipo == 'INGRESO':
-                flash('❌ El empleado ya tiene un INGRESO activo', 'warning')
-                return redirect(url_for('asistencias.marcar_asistencia'))
-
-            if ultima.tipo == 'SALIDA' and tipo == 'SALIDA':
-                flash('❌ No puede marcar dos SALIDAS seguidas', 'warning')
-                return redirect(url_for('asistencias.marcar_asistencia'))
-        else:
-            if tipo == 'SALIDA':
-                flash('❌ No se puede marcar SALIDA sin un INGRESO previo', 'warning')
-                return redirect(url_for('asistencias.marcar_asistencia'))
-
-        asistencia = Asistencia(
-            empleado_id=empleado_id,
-            empresa_id=current_user.empresa_id,
-            tipo=tipo,
-            actividad=actividad if tipo == 'INGRESO' else None,
-            fecha_hora=datetime.now()
-        )
-
-        db.session.add(asistencia)
-        db.session.commit()
-        empleado = Empleado.query.get(empleado_id)
-
-        registrar_evento(
-            accion="CREAR",
-            entidad="ASISTENCIA",
-            descripcion=f"{tipo} | {empleado.apellido}, {empleado.nombre} | Actividad: {actividad or '-'}"
-        )
-
-        flash('✅ Asistencia registrada correctamente', 'success')
-        return redirect(url_for('asistencias.marcar_asistencia'))
 
     return render_template(
         'asistencias.html',
@@ -105,62 +143,3 @@ def marcar_asistencia():
     )
 
 
-# =========================
-# REPORTE DIARIO POR BLOQUES
-# =========================
-@asistencias_bp.route('/reporte-diario')
-@login_required
-@requiere_ip_empresa
-def reporte_diario_bloques():
-
-    hoy = datetime.now().date()
-
-    asistencias = (
-        asistencias_empresa()
-        .join(Empleado)
-        .filter(db.func.date(Asistencia.fecha_hora) == hoy)
-        .order_by(Empleado.apellido, Asistencia.fecha_hora)
-        .all()
-    )
-
-    registros_por_empleado = defaultdict(list)
-    for a in asistencias:
-        registros_por_empleado[a.empleado].append(a)
-
-    bloques = []
-
-    for empleado, registros in registros_por_empleado.items():
-        bloque_actual = None
-
-        for r in registros:
-            if r.tipo == 'INGRESO':
-                bloque_actual = {
-                    'empleado': empleado,
-                    'ingreso': r.fecha_hora,
-                    'salida': None,
-                    'horas': '00:00',
-                    'estado': 'EN CURSO'
-                }
-
-            elif r.tipo == 'SALIDA' and bloque_actual:
-                total_segundos = (r.fecha_hora - bloque_actual['ingreso']).total_seconds()
-                horas = int(total_segundos // 3600)
-                minutos = int((total_segundos % 3600) // 60)
-
-                bloque_actual.update({
-                    'salida': r.fecha_hora,
-                    'horas': f'{horas:02d}:{minutos:02d}',
-                    'estado': 'OK'
-                })
-
-                bloques.append(bloque_actual)
-                bloque_actual = None
-
-        if bloque_actual:
-            bloques.append(bloque_actual)
-
-    return render_template(
-        'reporte_diario_bloques.html',
-        bloques=bloques,
-        fecha=hoy
-    )
