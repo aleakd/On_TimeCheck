@@ -36,7 +36,13 @@ def marcar_asistencia():
     asistencias_hoy = (
         asistencias_empresa()
         .join(Empleado)
-        .filter(db.func.date(Asistencia.fecha_hora) == hoy)
+        .filter(db.func.date(
+    db.func.timezone(
+        'America/Argentina/Buenos_Aires',
+        Asistencia.fecha_hora
+    )
+) == hoy
+)
         .order_by(Asistencia.fecha_hora.desc())
         .all()
     )

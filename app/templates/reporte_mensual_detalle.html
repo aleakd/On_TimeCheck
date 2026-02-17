@@ -21,8 +21,8 @@
         {% for d in detalle %}
         <tr>
             <td>{{ d.fecha.strftime('%d/%m/%Y') }}</td>
-            <td>{{ d.ingreso | hora_ar | strftime('%H:%M') if d.ingreso else '-' }}</td>
-            <td>{{ d.salida | hora_ar | strftime('%H:%M') if d.salida else '-' }}</td>
+            <td>{{ (d.ingreso | hora_ar).strftime('%H:%M') if d.ingreso else '-' }}</td>
+            <td>{{ (d.salida | hora_ar).strftime('%H:%M') if d.salida else '-' }}</td>
             <td><strong>{{ d.horas }}</strong></td>
             <td>{{ d.actividad }}</td>
             <td class="text-center">{{ d.bloque }}</td>

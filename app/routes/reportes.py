@@ -201,7 +201,12 @@ def reporte_diario():
     asistencias = (
         asistencias_empresa()
         .join(Empleado)
-        .filter(db.func.date(Asistencia.fecha_hora) == hoy)
+        .filter(db.func.date(
+    db.func.timezone(
+        'America/Argentina/Buenos_Aires',
+        Asistencia.fecha_hora
+    )
+) == hoy)
         .order_by(Empleado.apellido, Asistencia.fecha_hora)
         .all()
     )
@@ -267,7 +272,12 @@ def reporte_diario_bloques():
     asistencias = (
         asistencias_empresa()
         .join(Empleado)
-        .filter(db.func.date(Asistencia.fecha_hora) == hoy)
+        .filter(db.func.date(
+    db.func.timezone(
+        'America/Argentina/Buenos_Aires',
+        Asistencia.fecha_hora
+    )
+) == hoy)
         .order_by(Empleado.apellido, Asistencia.fecha_hora)
         .all()
     )
@@ -333,7 +343,12 @@ def reporte_diario_detalle(empleado_id):
         asistencias_empresa()
         .filter(
             Asistencia.empleado_id == empleado_id,
-            db.func.date(Asistencia.fecha_hora) == hoy
+            db.func.date(
+                db.func.timezone(
+                    'America/Argentina/Buenos_Aires',
+                    Asistencia.fecha_hora
+                )
+            ) == hoy
         )
         .order_by(Asistencia.fecha_hora)
         .all()

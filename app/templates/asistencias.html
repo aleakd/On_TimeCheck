@@ -1,10 +1,8 @@
 {% extends "base.html" %}
 
-
 {% block content %}
 
 <h2 class="mb-4">🕒 Asistencias</h2>
-
 
 <form method="post" class="card shadow-sm p-4">
 
@@ -20,7 +18,6 @@
         </select>
     </div>
 
-    <!-- ACTIVIDAD -->
     <div class="mb-3" id="actividad-box" style="display:none;">
         <label class="form-label">Actividad</label>
         <select name="actividad" id="actividad" class="form-select">
@@ -38,88 +35,3 @@
     <div class="mb-3">
         <label class="form-label">Tipo</label>
         <select name="tipo" id="tipo" class="form-select" required>
-            <option value="">Seleccione</option>
-            <option value="INGRESO">Ingreso</option>
-            <option value="SALIDA">Salida</option>
-        </select>
-    </div>
-
-    {% if current_user.rol == "admin" %}
-    <hr>
-    <h5>Carga manual (admin)</h5>
-
-    <label>Fecha</label>
-    <input type="date" name="fecha_manual" class="form-control">
-
-    <label>Hora</label>
-    <input type="time" name="hora_manual" class="form-control">
-    {% endif %}
-
-    <button class="btn btn-primary w-100">
-        Registrar
-    </button>
-
-
-</form>
-
-
-
-
-<hr class="my-4">
-
-<h5>📋 Asistencias de hoy</h5>
-
-<table class="table table-sm table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Empleado</th>
-            <th>Tipo</th>
-            <th>Actividad</th>
-            <th>Hora</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for a in asistencias_hoy %}
-        <tr>
-            <td>{{ a.empleado.apellido }}, {{ a.empleado.nombre }}</td>
-            <td>
-                {% if a.tipo == 'INGRESO' %}
-                    <span class="badge bg-success">Ingreso</span>
-                {% else %}
-                    <span class="badge bg-danger">Salida</span>
-                {% endif %}
-            </td>
-            <td>{{ a.actividad }}</td>
-            <td>{{ a.fecha_hora.astimezone().strftime('%H:%M') }}
-</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="3" class="text-center text-muted">
-                No hay asistencias registradas hoy
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-
-<script>
-const tipoSelect = document.getElementById('tipo');
-const actividadBox = document.getElementById('actividad-box');
-const actividadSelect = document.getElementById('actividad');
-
-tipoSelect.addEventListener('change', function () {
-    if (this.value === 'INGRESO') {
-        actividadBox.style.display = 'block';
-        actividadSelect.setAttribute('required', 'required');
-    } else {
-        actividadBox.style.display = 'none';
-        actividadSelect.removeAttribute('required');
-        actividadSelect.value = '';
-    }
-});
-</script>
-
-
-{% endblock %}

@@ -18,8 +18,8 @@
     <tbody>
         {% for b in bloques %}
         <tr>
-            <td>{{ b.ingreso | hora_ar | strftime('%H:%M') }}</td>
-            <td>{{ b.salida | hora_ar | strftime('%H:%M') if b.salida else '-' }}</td>
+            <td>{{ (b.ingreso | hora_ar).strftime('%H:%M') }}</td>
+            <td>{{ (b.salida | hora_ar).strftime('%H:%M') if b.salida else '-' }}</td>
 
             <td><strong>{{ b.horas }}</strong></td>
             <td>{{ b.actividad }}</td>

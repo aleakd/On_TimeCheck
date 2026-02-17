@@ -18,10 +18,10 @@
         {% for b in bloques %}
         <tr>
             <td>{{ b.empleado.apellido }}, {{ b.empleado.nombre }}</td>
-            <td>{{ b.ingreso.strftime('%H:%M') }}</td>
+            <td>{{ (b.ingreso | hora_ar).strftime('%H:%M') }}</td>
             <td>
                 {% if b.salida %}
-                    {{ b.salida.strftime('%H:%M') }}
+                    {{ (b.salida | hora_ar).strftime('%H:%M') }}
                 {% else %}
                     -
                 {% endif %}
