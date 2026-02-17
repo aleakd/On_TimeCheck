@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy import extract
 from app.multitenant import empleados_empresa, asistencias_empresa
 from collections import defaultdict
+
 main_bp = Blueprint('main', __name__)
 
 from sqlalchemy import text
@@ -110,3 +111,30 @@ def dashboard():
     )
 
 
+
+@main_bp.route('/fix-db-default')
+def fix_db_default():
+
+    db.session.execute(text("""
+        ALTER TABLE asistencia
+        ALTER COLUMN fecha_hora SET DEFAULT NOW();
+    """))
+
+    db.session.execute(text("""
+        ALTER TABLE audit_log
+        ALTER COLUMN created_at SET DEFAULT NOW();
+    """))
+
+    db.session.execute(text("""
+        ALTER TABLE usuario
+        ALTER COLUMN created_at SET DEFAULT NOW();
+    """))
+
+    db.session.execute(text("""
+        ALTER TABLE empresa
+        ALTER COLUMN created_at SET DEFAULT NOW();
+    """))
+
+    db.session.commit()
+
+    return "DEFAULT NOW() aplicado ✅"
