@@ -36,7 +36,7 @@ def index():
 @admin_o_supervisor
 def reporte_mensual():
 
-    hoy = ahora_argentina()
+    hoy = datetime.utcnow()
 
 
     primer_dia_mes_actual = hoy.replace(day=1)
@@ -195,7 +195,7 @@ def detalle_mensual_empleado(empleado_id):
 @admin_o_supervisor
 def reporte_diario():
 
-    hoy = ahora_argentina().date()
+    hoy = datetime.utcnow().date()
 
 
     asistencias = (
@@ -261,7 +261,7 @@ def reporte_diario():
 @admin_o_supervisor
 def reporte_diario_bloques():
 
-    hoy = ahora_argentina().date()
+    hoy = datetime.utcnow().date()
 
 
     asistencias = (
