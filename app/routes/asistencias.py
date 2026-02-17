@@ -3,10 +3,11 @@ from flask_login import login_required, current_user
 from app.models import db, Empleado, Asistencia
 from app.multitenant import empleados_empresa, asistencias_empresa
 from datetime import datetime
+
 from collections import defaultdict
 from app.security import requiere_ip_empresa
 from app.audit import registrar_evento
-from app.utils.timezone import ahora_argentina, ARG_TZ
+
 
 
 asistencias_bp = Blueprint(
@@ -53,6 +54,7 @@ def marcar_asistencia():
 
             tipo = request.form.get('tipo')
             actividad = request.form.get('actividad')
+            fecha_hora = datetime.utcnow()
 
             # 👇 NUEVO — CAMPOS MANUALES ADMIN
             fecha_manual = request.form.get("fecha_manual")
@@ -69,15 +71,7 @@ def marcar_asistencia():
             # ==============================
             # ⏰ FECHA INTELIGENTE
             # ==============================
-            if current_user.rol == "admin" and fecha_manual and hora_manual:
-                fecha_hora = ARG_TZ.localize(
-                    datetime.strptime(
-                        f"{fecha_manual} {hora_manual}",
-                        "%Y-%m-%d %H:%M"
-                    )
-                )
-            else:
-                fecha_hora = ahora_argentina()
+
 
 
             # ==============================
@@ -114,8 +108,7 @@ def marcar_asistencia():
                 empleado_id=empleado_id,
                 empresa_id=current_user.empresa_id,
                 tipo=tipo,
-                actividad=actividad if tipo == 'INGRESO' else None,
-                fecha_hora=fecha_hora
+                actividad=actividad if tipo == 'INGRESO' else None
             )
 
             db.session.add(asistencia)
@@ -129,7 +122,8 @@ def marcar_asistencia():
             registrar_evento(
                 accion="CREAR",
                 entidad="ASISTENCIA",
-                descripcion=f"{tipo} | {empleado.apellido}, {empleado.nombre} | Fecha: {fecha_hora}"
+                descripcion=f"{tipo} | {empleado.apellido}, {empleado.nombre}"
+
             )
 
             flash('✅ Asistencia registrada correctamente', 'success')
