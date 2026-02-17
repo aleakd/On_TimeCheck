@@ -4,6 +4,9 @@ from flask_login import LoginManager, current_user
 from app.models import Empresa, Asistencia, Usuario, AuditLog
 import os
 from zoneinfo import ZoneInfo
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -24,6 +27,12 @@ def create_app():
 
     db.init_app(app)
     login_manager.init_app(app)
+
+    @event.listens_for(Engine, "connect")
+    def set_timezone(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("SET TIME ZONE 'UTC'")
+        cursor.close()
 
     # ==========================================
     # 🕒 FILTRO GLOBAL HORA ARGENTINA (CLAVE)
