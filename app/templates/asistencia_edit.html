@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>✏️ Editar asistencia</h3>
+
+<form method="POST" class="card p-4 shadow-sm">
+
+    <div class="mb-3">
+        <label>Tipo</label>
+        <select name="tipo" class="form-control">
+            <option value="INGRESO" {% if asistencia.tipo=='INGRESO' %}selected{% endif %}>Ingreso</option>
+            <option value="SALIDA" {% if asistencia.tipo=='SALIDA' %}selected{% endif %}>Salida</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Actividad</label>
+        <input name="actividad" class="form-control"
+               value="{{ asistencia.actividad }}">
+    </div>
+
+    <div class="mb-3">
+        <label>Fecha y hora</label>
+        <input type="datetime-local" name="fecha_hora"
+               class="form-control"
+               value="{{ asistencia.fecha_hora.strftime('%Y-%m-%dT%H:%M') }}">
+    </div>
+
+    <button class="btn btn-primary">Guardar cambios</button>
+
+</form>
+
+{% endblock %}

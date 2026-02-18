@@ -17,10 +17,14 @@ def create_app():
     database_url = os.getenv("DATABASE_URL")
 
     if database_url:
-        # Render usa postgres:// y SQLAlchemy necesita postgresql://
+        # 🌐 PRODUCCIÓN (Render)
         database_url = database_url.replace("postgres://", "postgresql://", 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    else:
+        # 💻 LOCAL (tu PC con PostgreSQL)
+        app.config['SQLALCHEMY_DATABASE_URI'] = \
+            "postgresql://postgres:postgris@localhost:5432/ontimecheck_local"
 
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///on_timecheck.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.config['EXPLAIN_TEMPLATE_LOADING'] = True
@@ -28,8 +32,14 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
 
+    from sqlalchemy.engine import Engine
+
     @event.listens_for(Engine, "connect")
     def set_timezone(dbapi_connection, connection_record):
+        # 👇 SOLO ejecutar si es PostgreSQL (Render)
+        if "sqlite" in str(dbapi_connection.__class__):
+            return
+
         cursor = dbapi_connection.cursor()
         cursor.execute("SET TIME ZONE 'UTC'")
         cursor.close()
@@ -68,6 +78,12 @@ def create_app():
 
     from app.routes.auditoria import auditoria_bp
     app.register_blueprint(auditoria_bp)
+
+    from app.routes.asistencias_admin import asistencias_admin_bp
+    app.register_blueprint(asistencias_admin_bp)
+
+    from app.routes.fichaje import fichaje_bp
+    app.register_blueprint(fichaje_bp)
 
     # -------------------------------------------------------------------------------------------------------
     # 🔑 CREAR TABLAS SI NO EXISTEN

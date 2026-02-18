@@ -18,6 +18,15 @@ def load_user(user_id):
 #________________________________________________________________________________________________________________-
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+
+    # 👉 si ya está logueado, evitar volver a loguear
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        if current_user.rol == "empleado":
+            return redirect(url_for("fichaje.home"))
+        else:
+            return redirect(url_for("main.dashboard"))
+
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -29,16 +38,31 @@ def login():
             return redirect(url_for('auth.login'))
 
         login_user(user)
+
         registrar_evento(
             "LOGIN",
             f"Inicio de sesión: {user.email}",
             "USUARIO"
         )
 
-        return redirect(url_for('main.dashboard'))
+        # ==========================================
+        # 🔥 NUEVA LÓGICA DE REDIRECCIÓN
+        # ==========================================
 
+        # 1️⃣ Si viene parámetro next (ej QR)
+        next_page = request.args.get("next")
+
+        if next_page:
+            return redirect(url_for(next_page))
+
+        # 2️⃣ Si no hay next → decidir por rol
+        if user.rol == "empleado":
+            return redirect(url_for("fichaje.home"))
+        else:
+            return redirect(url_for("main.dashboard"))
 
     return render_template('login.html')
+
 #________________________________________________________________________________________________________________-
 @auth_bp.route('/logout')
 @login_required

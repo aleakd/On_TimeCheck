@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container text-center mt-4">
+
+    <h2 class="mb-1">Fichaje</h2>
+    <p class="text-muted mb-4">
+        {{ current_user.empleado.apellido }}, {{ current_user.empleado.nombre }}
+    </p>
+
+    {% if ultima %}
+        <div class="alert alert-secondary">
+            Último registro:
+            <strong>{{ ultima.tipo }}</strong>
+            a las
+            <strong>{{ (ultima.fecha_hora | hora_ar).strftime('%H:%M') }}</strong>
+        </div>
+    {% endif %}
+
+    <div class="row mt-4">
+
+        <!-- BOTON INGRESO -->
+        <div class="col-12 mb-4">
+            {% if puede_ingresar %}
+                <a href="{{ url_for('fichaje.fichar_ingreso') }}"
+                   class="btn btn-success w-100 py-5 shadow">
+                    <div style="font-size:32px">🟢 INGRESAR</div>
+                    <div style="font-size:18px">Comenzar jornada</div>
+                </a>
+            {% else %}
+                <button class="btn btn-success w-100 py-5 shadow" disabled>
+                    <div style="font-size:32px">🟢 INGRESAR</div>
+                    <div style="font-size:18px">Ya fichado</div>
+                </button>
+            {% endif %}
+        </div>
+
+        <!-- BOTON SALIDA -->
+        <div class="col-12">
+            {% if puede_salir %}
+                <a href="{{ url_for('fichaje.fichar_salida') }}"
+                   class="btn btn-danger w-100 py-5 shadow">
+                    <div style="font-size:32px">🔴 SALIR</div>
+                    <div style="font-size:18px">Finalizar jornada</div>
+                </a>
+            {% else %}
+                <button class="btn btn-danger w-100 py-5 shadow" disabled>
+                    <div style="font-size:32px">🔴 SALIR</div>
+                    <div style="font-size:18px">Sin ingreso activo</div>
+                </button>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

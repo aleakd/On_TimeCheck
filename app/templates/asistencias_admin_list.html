@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>🗂 Gestión de asistencias</h3>
+
+<table class="table table-striped mt-4">
+    <thead class="table-dark">
+        <tr>
+            <th>Empleado</th>
+            <th>Tipo</th>
+            <th>Actividad</th>
+            <th>Fecha y hora</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for a in asistencias %}
+        <tr>
+            <td>{{ a.empleado.apellido }}, {{ a.empleado.nombre }}</td>
+            <td>{{ a.tipo }}</td>
+            <td>{{ a.actividad or '-' }}</td>
+            <td>{{ a.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</td>
+
+            <td>
+                <a href="/asistencias-admin/editar/{{ a.id }}"
+                   class="btn btn-sm btn-warning">Editar</a>
+
+                <button onclick="confirmDelete({{ a.id }})"
+                        class="btn btn-sm btn-danger">
+                    Eliminar
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
