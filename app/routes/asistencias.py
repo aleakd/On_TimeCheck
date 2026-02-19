@@ -2,12 +2,10 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app.models import db, Empleado, Asistencia
 from app.multitenant import empleados_empresa, asistencias_empresa
-from datetime import datetime
-
-from collections import defaultdict
+from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta, timezone
 from app.security import requiere_ip_empresa
 from app.audit import registrar_evento
-
 
 
 asistencias_bp = Blueprint(
@@ -16,130 +14,171 @@ asistencias_bp = Blueprint(
     url_prefix='/asistencias'
 )
 
-# =========================
-# MARCAR ASISTENCIA
-# =========================
+
+# =====================================================
+# 🕒 MARCAR ASISTENCIA
+# =====================================================
 @asistencias_bp.route('/', methods=['GET', 'POST'])
 @login_required
 @requiere_ip_empresa
 def marcar_asistencia():
-    # 👇 detectar si es usuario empleado
+
+    # ==========================================
+    # 👤 Detectar modo empleado
+    # ==========================================
     modo_empleado = current_user.rol == 'empleado'
-    # 👇 si es empleado solo puede verse a sí mismo
+
     if modo_empleado:
         empleados = [current_user.empleado]
     else:
-        empleados = empleados_empresa().filter_by(activo=True) \
-            .order_by(Empleado.apellido).all()
+        empleados = (
+            empleados_empresa()
+            .filter_by(activo=True)
+            .order_by(Empleado.apellido)
+            .all()
+        )
 
-    hoy = datetime.now().date()
+    # ==========================================
+    # 🇦🇷 Calcular "HOY" en horario Argentina
+    # ==========================================
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
+    ahora_ar = datetime.now(tz_ar)
+
+    inicio_dia_ar = ahora_ar.replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    fin_dia_ar = inicio_dia_ar + timedelta(days=1)
+
+    # Convertir rango a UTC (como guarda la DB)
+    inicio_utc = inicio_dia_ar.astimezone(timezone.utc)
+    fin_utc = fin_dia_ar.astimezone(timezone.utc)
+
     asistencias_hoy = (
         asistencias_empresa()
         .join(Empleado)
-        .filter(db.func.date(
-    db.func.timezone(
-        'America/Argentina/Buenos_Aires',
-        Asistencia.fecha_hora
-    )
-) == hoy
-)
+        .filter(
+            Asistencia.fecha_hora >= inicio_utc,
+            Asistencia.fecha_hora < fin_utc
+        )
         .order_by(Asistencia.fecha_hora.desc())
         .all()
     )
 
+    # =====================================================
+    # 💾 POST — REGISTRAR ASISTENCIA
+    # =====================================================
     if request.method == 'POST':
-        if request.method == 'POST':
 
-            # ==============================
-            # DATOS FORM
-            # ==============================
-            if modo_empleado:
-                empleado_id = current_user.empleado_id
-            else:
-                empleado_id = request.form.get('empleado_id')
+        # ----------------------------------
+        # 👤 EMPLEADO
+        # ----------------------------------
+        if modo_empleado:
+            empleado_id = int(current_user.empleado_id)
+        else:
+            empleado_id = int(request.form.get('empleado_id'))
 
-            tipo = request.form.get('tipo')
-            actividad = request.form.get('actividad')
-            fecha_hora = datetime.utcnow()
+        tipo = request.form.get('tipo')
+        actividad = request.form.get('actividad')
 
-            # 👇 NUEVO — CAMPOS MANUALES ADMIN
-            fecha_manual = request.form.get("fecha_manual")
-            hora_manual = request.form.get("hora_manual")
+        # Campos manuales (solo admin)
+        fecha_manual = request.form.get("fecha_manual")
+        hora_manual = request.form.get("hora_manual")
 
-            if not empleado_id or tipo not in ['INGRESO', 'SALIDA']:
-                flash('❌ Datos inválidos', 'danger')
+        # ==========================================
+        # 🕒 DEFINIR FECHA FINAL A GUARDAR
+        # ==========================================
+        if current_user.rol == "admin" and fecha_manual and hora_manual:
+            try:
+                # Crear fecha en horario Argentina
+                fecha_str = f"{fecha_manual} {hora_manual}"
+                fecha_local = datetime.strptime(fecha_str, "%Y-%m-%d %H:%M")
+                fecha_local = fecha_local.replace(tzinfo=tz_ar)
+
+                # Convertir a UTC para guardar
+                fecha_hora = fecha_local.astimezone(timezone.utc)
+
+            except Exception:
+                flash("❌ Fecha u hora manual inválida", "danger")
                 return redirect(url_for('asistencias.marcar_asistencia'))
+        else:
+            # ⏱️ Automático
+            fecha_hora = datetime.now(timezone.utc)
 
-            if tipo == 'INGRESO' and not actividad:
-                flash('⚠️ Debe seleccionar una actividad para el INGRESO', 'warning')
-                return redirect(url_for('asistencias.marcar_asistencia'))
-
-            # ==============================
-            # ⏰ FECHA INTELIGENTE
-            # ==============================
-
-
-
-            # ==============================
-            # 🔒 VALIDACIÓN TEMPORAL CORRECTA
-            # busca la última asistencia ANTERIOR a la que estoy cargando
-            # ==============================
-            ultima = (
-                asistencias_empresa()
-                .filter(
-                    Asistencia.empleado_id == empleado_id,
-                    Asistencia.fecha_hora < fecha_hora
-                )
-                .order_by(Asistencia.fecha_hora.desc())
-                .first()
-            )
-
-            if ultima:
-                if ultima.tipo == 'INGRESO' and tipo == 'INGRESO':
-                    flash('❌ El empleado ya tenía un INGRESO activo en ese momento', 'warning')
-                    return redirect(url_for('asistencias.marcar_asistencia'))
-
-                if ultima.tipo == 'SALIDA' and tipo == 'SALIDA':
-                    flash('❌ No puede haber dos SALIDAS seguidas en esa fecha', 'warning')
-                    return redirect(url_for('asistencias.marcar_asistencia'))
-            else:
-                if tipo == 'SALIDA':
-                    flash('❌ No puede cargar una SALIDA sin un INGRESO previo', 'warning')
-                    return redirect(url_for('asistencias.marcar_asistencia'))
-
-            # ==============================
-            # 💾 GUARDAR
-            # ==============================
-            asistencia = Asistencia(
-                empleado_id=empleado_id,
-                empresa_id=current_user.empresa_id,
-                tipo=tipo,
-                actividad=actividad if tipo == 'INGRESO' else None
-            )
-
-            db.session.add(asistencia)
-            db.session.commit()
-
-            # ==============================
-            # 🧾 AUDITORÍA
-            # ==============================
-            empleado = Empleado.query.get(empleado_id)
-
-            registrar_evento(
-                accion="CREAR",
-                entidad="ASISTENCIA",
-                descripcion=f"{tipo} | {empleado.apellido}, {empleado.nombre}"
-
-            )
-
-            flash('✅ Asistencia registrada correctamente', 'success')
+        # 🚫 Bloquear fichajes futuros
+        if fecha_hora > datetime.now(timezone.utc):
+            flash("❌ No se puede cargar asistencia en el futuro", "danger")
             return redirect(url_for('asistencias.marcar_asistencia'))
 
+        # ==========================================
+        # 🔎 VALIDACIONES
+        # ==========================================
+        if not empleado_id or tipo not in ['INGRESO', 'SALIDA']:
+            flash('❌ Datos inválidos', 'danger')
+            return redirect(url_for('asistencias.marcar_asistencia'))
+
+        if tipo == 'INGRESO' and not actividad:
+            flash('⚠️ Debe seleccionar una actividad para el INGRESO', 'warning')
+            return redirect(url_for('asistencias.marcar_asistencia'))
+
+        # ==========================================
+        # 🔒 VALIDACIÓN SECUENCIAL (ING/SAL)
+        # ==========================================
+        ultima = (
+            asistencias_empresa()
+            .filter(
+                Asistencia.empleado_id == empleado_id,
+                Asistencia.fecha_hora < fecha_hora
+            )
+            .order_by(Asistencia.fecha_hora.desc())
+            .first()
+        )
+
+        if ultima:
+            if ultima.tipo == 'INGRESO' and tipo == 'INGRESO':
+                flash('❌ Ya existe un INGRESO activo en ese momento', 'warning')
+                return redirect(url_for('asistencias.marcar_asistencia'))
+
+            if ultima.tipo == 'SALIDA' and tipo == 'SALIDA':
+                flash('❌ No puede haber dos SALIDAS consecutivas', 'warning')
+                return redirect(url_for('asistencias.marcar_asistencia'))
+        else:
+            if tipo == 'SALIDA':
+                flash('❌ No puede registrar SALIDA sin INGRESO previo', 'warning')
+                return redirect(url_for('asistencias.marcar_asistencia'))
+
+        # ==========================================
+        # 💾 GUARDAR EN BD
+        # ==========================================
+        asistencia = Asistencia(
+            empleado_id=empleado_id,
+            empresa_id=current_user.empresa_id,
+            tipo=tipo,
+            actividad=actividad if tipo == 'INGRESO' else None,
+            fecha_hora=fecha_hora
+        )
+
+        db.session.add(asistencia)
+        db.session.commit()
+
+        # ==========================================
+        # 🧾 AUDITORÍA
+        # ==========================================
+        empleado = Empleado.query.get(empleado_id)
+
+        registrar_evento(
+            accion="CREAR",
+            entidad="ASISTENCIA",
+            descripcion=f"{tipo} | {empleado.apellido}, {empleado.nombre}"
+        )
+
+        flash('✅ Asistencia registrada correctamente', 'success')
+        return redirect(url_for('asistencias.marcar_asistencia'))
+
+    # =====================================================
+    # 📄 GET — RENDER
+    # =====================================================
     return render_template(
         'asistencias.html',
         empleados=empleados,
         asistencias_hoy=asistencias_hoy,
-
     )
-
-

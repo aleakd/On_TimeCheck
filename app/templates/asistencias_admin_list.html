@@ -3,7 +3,7 @@
 
 <h3>🗂 Gestión de asistencias</h3>
 
-<table class="table table-striped mt-4">
+<table class="table table-striped mt-4" id="asistencias_admin">
     <thead class="table-dark">
         <tr>
             <th>Empleado</th>
@@ -35,5 +35,12 @@
         {% endfor %}
     </tbody>
 </table>
+
+
+<script>
+    $(document).ready(function () {
+        $('#asistencias_admin').DataTable();
+    });
+</script>
 
 {% endblock %}
