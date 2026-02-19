@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>On TimeCheck</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -25,60 +27,54 @@
 <body class="bg-light">
 
 <!-- NAVBAR SUPERIOR -->
+<nav class="navbar nave shadow-sm">
+    <div class="container-fluid px-3">
+
+        <a class="navbar-brand brand-otc" href="{{ url_for('main.dashboard') }}">
+            <img src="{{ url_for('static', filename='img/logoOTC.png') }}" alt="logo">
+            <span class="titulo">
+                OnTime<span class="brand-accent">Check</span>
+            </span>
+
+        </a>
+
+        <div class="d-none d-lg-flex align-items-center gap-4 menu">
+
+            {% if current_user.rol in ['admin','supervisor','empleado'] %}
+                <a href="/fichaje" class="nav-link">🕒 Fichaje</a>
+             {% endif %}
+
+            {% if current_user.rol in ['admin','supervisor'] %}
+                <a href="/reportes" class="nav-link">📊 Reportes</a>
+                <a href="/asistencias" class="nav-link">🕒 Asistencias</a>
+             {% endif %}
+
+            {% if current_user.rol == 'admin' %}
+                <a href="/empleados" class="nav-link">👥 Empleados</a>
+                <a href="/auditoria" class="nav-link">🧾 Auditoría</a>
+                <a href="/usuarios" class="nav-link">🔐 Usuarios</a>
+                <a href="/empresa/configuracion" class="nav-link">🏢 Empresa</a>
+            {% endif %}
 
 
-<nav class="navbar nave">
-    <div class="container-fluid">
-        <!-- LOGO -->
 
-        <!-- Derecha -->
-        <div class="d-flex align-items-center">
-            <a class="navbar-brand brand-otc" href="{{ url_for('main.dashboard') }}">
-        <img src="{{ url_for('static', filename='img/logoOTC.png') }}" alt="logo">
-        <span class="titulo">OnTimeCheck</span>
-      </a>
+            <a href="/logout" class="nav-link text-danger fw-semibold">Salir</a>
+        </div>
 
-    <!-- MENU DESKTOP -->
-    <div class="d-none d-lg-flex me-4 gap-3 menu">
-
-        {% if current_user.rol in ['admin','supervisor','empleado'] %}
-            <a href="/fichaje" class="nav-link ">🕒 Fichaje</a>
-        {% endif %}
-        {% if current_user.rol in ['admin','supervisor'] %}
-            <a href="/reportes" class="nav-link ">📊 Reportes</a>
-        <a href="/asistencias" class="nav-link ">🕒 Asistencias</a>
-        {% endif %}
-
-        {% if current_user.rol == 'admin' %}
-            <a href="/empleados" class="nav-link ">👥 Empleados</a>
-            <a href="/auditoria" class="nav-link ">🧾 Auditoría</a>
-            <a href="/usuarios" class="nav-link ">🔐 Usuarios</a>
-            <a href="/empresa/configuracion" class="nav-link ">🏢 Empresa</a>
-        {% endif %}
-
-        <a href="/logout" class="nav-link text-danger">Salir</a>
-
-    </div>
-
-    {% if current_user.is_authenticated %}
-        <span class="navbar-text correo_usuario me-3">
+        {% if current_user.is_authenticated %}
+        <span class="navbar-text correo_usuario d-none d-lg-block">
             {{ current_user.email }} | 🏢 {{ g.empresa.nombre }}
         </span>
-    {% endif %}
+        {% endif %}
 
-    <!-- BOTON HAMBURGUESA SOLO MOBILE -->
-    <button class="navbar-toggler d-lg-none"
-            type="button"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#menuLateral">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-
-</div>
+        <button class="navbar-toggler d-lg-none" type="button"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#menuLateral">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
     </div>
 </nav>
-
 
 <!-- MENU LATERAL -->
 <div class="offcanvas offcanvas-start bg-dark text-light" tabindex="-1" id="menuLateral">
@@ -99,7 +95,7 @@
             <hr>
             <!-- empleado -->
             {% if current_user.rol in ['admin','supervisor','empleado'] %}
-                <a href="/asistencias" class="btn btn-outline-light w-100 mb-2">🕒 Asistencias</a>
+                <a href="/fichaje" class="btn btn-outline-light w-100 mb-2">🕒 Fichaje</a>
 
             {% endif %}
 
@@ -107,6 +103,7 @@
             {% if current_user.rol in ['admin','supervisor'] %}
                 <a href="/asistencias" class="btn btn-outline-light w-100 mb-2">🕒 Asistencias</a>
                 <a href="/reportes" class="btn btn-outline-light w-100 mb-2">📊 Reportes</a>
+
             {% endif %}
 
             <!-- SOLO ADMIN -->
@@ -126,24 +123,28 @@
 </div>
 
 
-<!-- ALERTAS -->
-<div class="container mt-3">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-</div>
+<main class="main-container">
 
-<!-- CONTENIDO -->
-<div class="container mt-4">
-    {% block content %}{% endblock %}
-</div>
+    <div class="container">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show mt-3">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="mt-4">
+            {% block content %}{% endblock %}
+        </div>
+
+    </div>
+
+</main>
 
 
 
@@ -172,21 +173,16 @@ function confirmDelete(id) {
 }
 </script>
 
-</body>
 
 
 
-
-
-<footer>
-    <!-- FOOTER -->
-    <div class="footer">
-        <a href="/logout" class="text-danger">🚪 Cerrar sesión</a>
-        <small style="opacity:.5">OnTimeCheck © 2026</small>
+<footer class="footer-app mt-5">
+    <div class="container text-center">
+        <small>OnTimeCheck © 2026</small>
     </div>
 </footer>
 
 
 
-
+</body>
 </html>
