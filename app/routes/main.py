@@ -106,7 +106,8 @@ def dashboard():
         trabajando=trabajando,
         horas_mes=horas_mes,
         chart_labels=labels,
-        chart_data=data
+        chart_data=data,
+        fecha_hoy=hoy
     )
 
 
