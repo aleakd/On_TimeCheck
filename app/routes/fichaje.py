@@ -4,6 +4,7 @@ from datetime import datetime
 from app.models import db, Asistencia
 from app.multitenant import asistencias_empresa
 from app.audit import registrar_evento
+from app.security import ip_autorizada_empresa
 
 fichaje_bp = Blueprint(
     "fichaje",
@@ -55,6 +56,7 @@ def home():
 # ACCIÓN INGRESO (1 CLICK)
 # =====================================================
 @fichaje_bp.route("/ingreso")
+@ip_autorizada_empresa
 @login_required
 def fichar_ingreso():
 
@@ -98,6 +100,7 @@ def fichar_ingreso():
 # ACCIÓN SALIDA (1 CLICK)
 # =====================================================
 @fichaje_bp.route("/salida")
+@ip_autorizada_empresa
 @login_required
 def fichar_salida():
 
