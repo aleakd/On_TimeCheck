@@ -51,9 +51,8 @@ def login():
 
         # 1️⃣ Si viene parámetro next (ej QR)
         next_page = request.args.get("next")
-
-        if next_page:
-            return redirect(url_for(next_page))
+        if next_page and next_page.startswith("/"):
+            return redirect(next_page)
 
         # 2️⃣ Si no hay next → decidir por rol
         if user.rol == "empleado":
