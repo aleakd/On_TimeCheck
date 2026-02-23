@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Superadmin | OnTimeCheck</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="background:#111; color:white; padding:40px;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>🔐 Superadmin - OnTimeCheck</h2>
+        <a href="{{ url_for('superadmin.logout') }}"
+           style="background:#EF4444; padding:10px 16px; border-radius:8px; color:white; text-decoration:none;">
+           Cerrar sesión
+        </a>
+    </div>
+
+    <hr style="margin:20px 0; border-color:#333;">
+
+    {% block content %}{% endblock %}
+
+</body>
+</html>

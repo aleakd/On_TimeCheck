@@ -1,35 +1,39 @@
-{% extends "base.html" %}
+{% extends "superadmin_base.html" %}
 {% block content %}
 
-<h2 class="mb-4">🔐 Panel Superadmin</h2>
+<h3>Empresas registradas</h3>
 
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
+<table style="width:100%; border-collapse:collapse;">
+    <thead>
+        <tr style="background:#222;">
+            <th style="padding:10px;">ID</th>
             <th>Empresa</th>
-            <th>Activa</th>
-            <th>Creada</th>
+            <th>Usuarios</th>
+            <th>Empleados</th>
+            <th>Asistencias</th>
+            <th>Estado</th>
             <th>Acción</th>
         </tr>
     </thead>
     <tbody>
-        {% for e in empresas %}
-        <tr>
-            <td>{{ e.id }}</td>
+        {% for e, usuarios, empleados, asistencias in empresas %}
+        <tr style="border-bottom:1px solid #333;">
+            <td style="padding:10px;">{{ e.id }}</td>
             <td>{{ e.nombre }}</td>
+            <td>{{ usuarios }}</td>
+            <td>{{ empleados }}</td>
+            <td>{{ asistencias }}</td>
             <td>
                 {% if e.activa %}
-                    <span class="badge bg-success">Activa</span>
+                    <span style="color:#22C55E;">Activa</span>
                 {% else %}
-                    <span class="badge bg-danger">Inactiva</span>
+                    <span style="color:#EF4444;">Inactiva</span>
                 {% endif %}
             </td>
-            <td>{{ e.created_at|hora_ar }}</td>
             <td>
                 <a href="{{ url_for('superadmin.toggle_empresa', id=e.id) }}"
-                   class="btn btn-sm btn-warning">
-                    Cambiar estado
+                   style="background:#F59E0B; padding:6px 10px; border-radius:6px; color:black; text-decoration:none;">
+                   Cambiar estado
                 </a>
             </td>
         </tr>
