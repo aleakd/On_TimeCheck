@@ -193,3 +193,27 @@ def editar_usuario(id):
     )
 
 
+# ==========================================
+# RESET PASSWORD (ADMIN)
+# ==========================================
+@usuarios_bp.route('/reset-password/<int:id>', methods=['POST'])
+@login_required
+@solo_admin
+def reset_password(id):
+
+    usuario = Usuario.query.filter_by(
+        id=id,
+        empresa_id=current_user.empresa_id
+    ).first_or_404()
+
+    nueva_password = request.form.get('nueva_password')
+
+    if not nueva_password or len(nueva_password) < 6:
+        flash("La contraseña debe tener al menos 6 caracteres", "warning")
+        return redirect(url_for('usuarios.lista_usuarios'))
+
+    usuario.password_hash = generate_password_hash(nueva_password)
+    db.session.commit()
+
+    flash("Contraseña reseteada correctamente", "success")
+    return redirect(url_for('usuarios.lista_usuarios'))

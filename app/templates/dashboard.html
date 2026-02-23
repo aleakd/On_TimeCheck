@@ -62,12 +62,21 @@
 ================================ -->
 <h4 class="mb-3">Acciones rápidas</h4>
 <div class="row quick-actions">
-
+    {% if current_user.rol in ['empleado'] %}
     <div class="col-md-3 mb-3">
         <a href="/fichaje" class="btn btn-primary w-100 p-4">
             🕒 Registrar asistencia
         </a>
     </div>
+    {% endif %}
+
+    {% if current_user.rol in ['admin', 'supervisor'] %}
+    <div class="col-md-3 mb-3">
+        <a href="/asistencias" class="btn btn-primary w-100 p-4">
+            🕒 Registrar asistencia
+        </a>
+    </div>
+    {% endif %}
 
     {% if current_user.rol in ['admin','supervisor'] %}
     <div class="col-md-3 mb-3">
@@ -111,6 +120,69 @@
 
 </div>
 
+
+<!-- ===============================
+     ESTADO ACTUAL DEL PERSONAL
+================================ -->
+<div class="card staff-status-card mb-5">
+
+    <!-- Header -->
+    <div class="staff-header">
+        <div>
+            <h4 class="mb-1">Estado actual del personal</h4>
+            <small class="text-muted">Último registro del día</small>
+        </div>
+
+        <div class="staff-summary">
+            <span class="badge badge-in">
+                🟢 {{ empleados_estado|selectattr("estado","equalto","ingreso")|list|length }}
+            </span>
+
+            <span class="badge badge-missing">
+                🔴 {{ empleados_estado|selectattr("estado","equalto","sin_registro")|list|length }}
+            </span>
+
+            <span class="badge badge-out">
+                ⚪ {{ empleados_estado|selectattr("estado","equalto","salida")|list|length }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Lista -->
+    <div class="staff-list-scroll">
+
+        {% for emp in empleados_estado %}
+        <div class="staff-row">
+
+            <div class="staff-left">
+                <div class="status-dot
+                    {% if emp.estado == 'ingreso' %}dot-in
+                    {% elif emp.estado == 'salida' %}dot-out
+                    {% else %}dot-missing{% endif %}">
+                </div>
+
+                <div>
+                    <div class="staff-name">
+                        {{ emp.nombre }}
+                    </div>
+                    <div class="staff-time text-muted">
+                        {% if emp.estado == 'ingreso' %}
+                            En planta desde {{ emp.hora }}
+                        {% elif emp.estado == 'salida' %}
+                            Salida a las {{ emp.hora }}
+                        {% else %}
+                            Sin registro hoy
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+</div>
 
 <!-- ===============================
      GRÁFICO TENDENCIA

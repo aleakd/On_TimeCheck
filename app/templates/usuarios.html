@@ -13,7 +13,8 @@
             <th>Email</th>
             <th>Rol</th>
             <th>Estado</th>
-            <th></th>
+            <th>Editar</th>
+            <th>Password</th>
         </tr>
     </thead>
 
@@ -40,6 +41,11 @@
                    Activar / Desactivar
                 </a>
             </td>
+            <td><form method="POST" action="/usuarios/reset-password/{{ u.id }}" style="display:inline;">
+    <input type="password" name="nueva_password" placeholder="Nueva contraseña"
+           class="form-control form-control-sm d-inline w-50" required>
+    <button class="btn btn-sm btn-danger">Reset</button>
+</form></td>
 
         </tr>
         {% endfor %}

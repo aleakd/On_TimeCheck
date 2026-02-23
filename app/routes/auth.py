@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
-from app import login_manager
+from app import login_manager, current_user
 from app.models import Usuario, Empresa, db
 from app.audit import registrar_evento
 
@@ -69,6 +69,10 @@ def logout():
     logout_user()
     return redirect(url_for('auth.login'))
 
+
+#________________________________________________________________________________________________________________-
+
+
 # ==========================================
 # REGISTRO EMPRESA + ADMIN
 # ==========================================
@@ -117,3 +121,38 @@ def registro():
         return redirect(url_for('auth.login'))
 
     return render_template('registro.html')
+
+#________________________________________________________________________________________________________________-
+
+# ==========================================
+# CAMBIAR MI CONTRASEÑA
+# ==========================================
+@auth_bp.route('/cambiar-password', methods=['GET','POST'])
+@login_required
+def cambiar_password():
+
+    if request.method == 'POST':
+
+        actual = request.form.get('actual')
+        nueva = request.form.get('nueva')
+        confirmar = request.form.get('confirmar')
+
+        if not check_password_hash(current_user.password_hash, actual):
+            flash("La contraseña actual es incorrecta", "danger")
+            return redirect(url_for('auth.cambiar_password'))
+
+        if nueva != confirmar:
+            flash("Las contraseñas nuevas no coinciden", "warning")
+            return redirect(url_for('auth.cambiar_password'))
+
+        if len(nueva) < 6:
+            flash("La contraseña debe tener al menos 6 caracteres", "warning")
+            return redirect(url_for('auth.cambiar_password'))
+
+        current_user.password_hash = generate_password_hash(nueva)
+        db.session.commit()
+
+        flash("Contraseña actualizada correctamente", "success")
+        return redirect(url_for('main.dashboard'))
+
+    return render_template("cambiar_password.html")

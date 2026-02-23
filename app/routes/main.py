@@ -2,6 +2,7 @@ from flask import Blueprint, render_template
 from flask_login import login_required, current_user
 from app.models import Empleado, Asistencia, db
 from datetime import datetime
+from sqlalchemy import func
 
 from app.multitenant import empleados_empresa, asistencias_empresa
 from collections import defaultdict
@@ -97,6 +98,77 @@ def dashboard():
         labels.append(dia.strftime("%d/%m"))
         data.append(round(horas_por_dia[dia] / 3600, 2))
 
+    if current_user.rol == "empleado":
+        empleados = [current_user.empleado]
+    else:
+        empleados = Empleado.query.filter_by(
+            empresa_id=current_user.empresa_id,
+            activo=True
+        ).all()
+
+    subquery = (
+        db.session.query(
+            Asistencia.empleado_id,
+            func.max(Asistencia.fecha_hora).label("ultima_fecha")
+        )
+        .filter(
+            Asistencia.empresa_id == current_user.empresa_id,
+            func.date(Asistencia.fecha_hora) == hoy
+        )
+        .group_by(Asistencia.empleado_id)
+        .subquery()
+    )
+
+    ultimos_registros = (
+        db.session.query(Asistencia)
+        .join(
+            subquery,
+            (Asistencia.empleado_id == subquery.c.empleado_id) &
+            (Asistencia.fecha_hora == subquery.c.ultima_fecha)
+        )
+        .all()
+    )
+
+    registro_dict = {
+        r.empleado_id: r
+        for r in ultimos_registros
+    }
+
+    empleados_estado = []
+
+    for emp in empleados:
+
+        registro = registro_dict.get(emp.id)
+
+        if registro:
+            if registro.tipo == "INGRESO":
+                estado = "ingreso"
+            else:
+                estado = "salida"
+
+            empleados_estado.append({
+                "nombre": f"{emp.apellido} {emp.nombre}",
+                "estado": estado,
+                "hora": registro.fecha_hora.strftime("%H:%M")
+            })
+
+        else:
+            empleados_estado.append({
+                "nombre": f"{emp.apellido} {emp.nombre}",
+                "estado": "sin_registro",
+                "hora": None
+            })
+
+        orden_prioridad = {
+            "ingreso": 0,
+            "sin_registro": 1,
+            "salida": 2
+        }
+
+        empleados_estado.sort(
+            key=lambda x: orden_prioridad[x["estado"]]
+        )
+
 
 
     return render_template(
@@ -107,7 +179,8 @@ def dashboard():
         horas_mes=horas_mes,
         chart_labels=labels,
         chart_data=data,
-        fecha_hoy=hoy
+        fecha_hoy=hoy,
+        empleados_estado=empleados_estado,
     )
 
 

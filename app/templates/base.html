@@ -40,8 +40,9 @@
 
         <div class="d-none d-lg-flex align-items-center gap-4 menu">
 
-            {% if current_user.rol in ['admin','supervisor','empleado'] %}
+            {% if current_user.rol in ['empleado'] %}
                 <a href="/fichaje" class="nav-link">🕒 Fichaje</a>
+                <a href="/cambiar-password" class="nav-link">🕒 Contraseña</a>
              {% endif %}
 
             {% if current_user.rol in ['admin','supervisor'] %}
