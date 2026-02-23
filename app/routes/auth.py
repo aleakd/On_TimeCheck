@@ -1,14 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 from app import login_manager, current_user
 from app.models import Usuario, Empresa, db
 from app.audit import registrar_evento
 
+
 auth_bp = Blueprint('auth', __name__)
-
-
-
 
 
 @login_manager.user_loader
@@ -31,10 +29,19 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
 
+        if email == current_app.config["SUPERADMIN_EMAIL"] and \
+                password == current_app.config["SUPERADMIN_PASSWORD"]:
+            session["superadmin"] = True
+            return redirect(url_for("superadmin.panel"))
+
         user = Usuario.query.filter_by(email=email, activo=True).first()
 
         if not user or not check_password_hash(user.password_hash, password):
             flash('Credenciales inválidas', 'danger')
+            return redirect(url_for('auth.login'))
+        # 🚫 Bloquear si empresa está desactivada
+        if user.empresa and not user.empresa.activa:
+            flash("La empresa se encuentra desactivada. Contacte al administrador.", "danger")
             return redirect(url_for('auth.login'))
 
         login_user(user)

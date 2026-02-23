@@ -25,3 +25,4 @@ def admin_o_supervisor(f):
             abort(403)
         return f(*args, **kwargs)
     return decorated_function
+

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-4">🔐 Panel Superadmin</h2>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Empresa</th>
+            <th>Activa</th>
+            <th>Creada</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in empresas %}
+        <tr>
+            <td>{{ e.id }}</td>
+            <td>{{ e.nombre }}</td>
+            <td>
+                {% if e.activa %}
+                    <span class="badge bg-success">Activa</span>
+                {% else %}
+                    <span class="badge bg-danger">Inactiva</span>
+                {% endif %}
+            </td>
+            <td>{{ e.created_at|hora_ar }}</td>
+            <td>
+                <a href="{{ url_for('superadmin.toggle_empresa', id=e.id) }}"
+                   class="btn btn-sm btn-warning">
+                    Cambiar estado
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

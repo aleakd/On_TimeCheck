@@ -123,8 +123,8 @@ class Usuario(UserMixin, db.Model):
         return f'<Usuario {self.email}>'
 
 # =========================
-    # AUDITORÍA DEL SISTEMA
-    # ========================
+ # AUDITORÍA DEL SISTEMA
+ # ========================
 class AuditLog(db.Model):
     __tablename__ = 'audit_log'
     id = db.Column(db.Integer, primary_key=True)

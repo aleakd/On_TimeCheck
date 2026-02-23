@@ -7,6 +7,8 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
+from dotenv import load_dotenv
+load_dotenv()
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -14,6 +16,9 @@ login_manager.login_view = 'auth.login'
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'on_timecheck_secret'
+    app.config["SUPERADMIN_EMAIL"] = os.getenv("SUPERADMIN_EMAIL")
+    app.config["SUPERADMIN_PASSWORD"] = os.getenv("SUPERADMIN_PASSWORD")
+
     database_url = os.getenv("DATABASE_URL")
 
     if database_url:
@@ -85,10 +90,13 @@ def create_app():
     from app.routes.fichaje import fichaje_bp
     app.register_blueprint(fichaje_bp)
 
+    from app.routes.superadmin import superadmin_bp
+    app.register_blueprint(superadmin_bp)
+
     # -------------------------------------------------------------------------------------------------------
     # 🔑 CREAR TABLAS SI NO EXISTEN
-    with app.app_context():
-        db.create_all()
+    #with app.app_context():
+    #    db.create_all()
 
     # ==========================================
     # CARGAR EMPRESA EN CADA REQUEST (MULTITENANT)
