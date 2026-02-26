@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 from app import login_manager, current_user
-from app.models import Usuario, Empresa, db
+from app.models import Usuario, Empresa, db, Sucursal
 from app.audit import registrar_evento
 
 
@@ -110,6 +110,14 @@ def registro():
         )
         db.session.add(empresa)
         db.session.flush()  # 🔥 obtenemos empresa.id sin commit
+        # Crear sucursal principal automática
+        sucursal = Sucursal(
+            empresa_id=empresa.id,
+            nombre="Sucursal Principal",
+            activa=True
+        )
+        db.session.add(sucursal)
+        db.session.flush()
 
         # =========================
         # 2️⃣ Crear usuario ADMIN

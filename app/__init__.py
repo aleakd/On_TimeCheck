@@ -93,10 +93,15 @@ def create_app():
     from app.routes.superadmin import superadmin_bp
     app.register_blueprint(superadmin_bp)
 
+    from app.routes.sucursales import sucursales_bp
+    app.register_blueprint(sucursales_bp)
+
     # -------------------------------------------------------------------------------------------------------
     # 🔑 CREAR TABLAS SI NO EXISTEN
-    #with app.app_context():
-    #    db.create_all()
+    with app.app_context():
+        db.create_all()
+
+
 
     # ==========================================
     # CARGAR EMPRESA EN CADA REQUEST (MULTITENANT)

@@ -47,12 +47,61 @@ def ip_autorizada_empresa():
     return False
 
 
+def ip_autorizada_sucursal():
+
+    # Si no tiene empleado asociado → permitir (admin, etc)
+    if not current_user.empleado:
+        return True
+
+    empleado = current_user.empleado
+
+    if not empleado.sucursal:
+        return True
+
+    sucursal = empleado.sucursal
+
+    # 🔴 NUEVA REGLA
+    if not sucursal.activa:
+        return False
+
+    # Si no configuró seguridad → permitir
+    if not sucursal.ip_publica and not sucursal.ip_rango:
+        return True
+
+    ip_cliente = obtener_ip_cliente()
+
+    try:
+        ip_cliente_obj = ipaddress.ip_address(ip_cliente)
+    except:
+        return False
+
+    if sucursal.ip_publica:
+        if ip_cliente == sucursal.ip_publica:
+            return True
+
+    if sucursal.ip_rango:
+        try:
+            red = ipaddress.ip_network(sucursal.ip_rango, strict=False)
+            if ip_cliente_obj in red:
+                return True
+        except:
+            pass
+
+    return False
+
 def requiere_ip_empresa(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
 
-        if not ip_autorizada_empresa():
-            flash('⛔ No estás conectado a la red autorizada de la empresa', 'danger')
+        if current_user.empleado:
+            sucursal = current_user.empleado.sucursal
+
+            if not sucursal.activa:
+                flash("⛔ La sucursal está inactiva", "danger")
+                return redirect(url_for('reportes.index'))
+
+        if not ip_autorizada_sucursal():
+            flash('⛔ No estás conectado a la red autorizada de la sucursal', 'danger')
             return redirect(url_for('reportes.index'))
 
         return func(*args, **kwargs)

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Sucursales</h2>
+        <a href="{{ url_for('sucursales.nueva_sucursal') }}" class="btn btn-primary">
+            + Nueva Sucursal
+        </a>
+    </div>
+
+    {% if sucursales %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>IP Pública</th>
+                    <th>Rango CIDR</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                    <th>Empleados</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sucursales %}
+                <tr>
+                    <td>
+                        <strong>{{ s.nombre }}</strong>
+                    </td>
+                    <td>
+                        {{ s.ip_publica if s.ip_publica else '-' }}
+                    </td>
+                    <td>
+                        {{ s.ip_rango if s.ip_rango else '-' }}
+                    </td>
+                    <td>
+                        {% if s.activa %}
+                            <span class="badge bg-success">Activa</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactiva</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('sucursales.editar_sucursal', id=s.id) }}"
+                           class="btn btn-sm btn-primary">
+                          Editar
+                        </a>
+                        <a href="{{ url_for('sucursales.toggle_sucursal', id=s.id) }}"
+                           class="btn btn-sm {% if s.activa %}btn-warning{% else %}btn-success{% endif %}">
+                            {% if s.activa %}
+                                Desactivar
+                            {% else %}
+                                Activar
+                            {% endif %}
+                        </a>
+                    </td>
+
+                    <td>{{ s.empleados|length }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="alert alert-info">
+            No hay sucursales creadas todavía.
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

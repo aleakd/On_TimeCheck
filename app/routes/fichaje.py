@@ -79,6 +79,7 @@ def fichar_ingreso():
     asistencia = Asistencia(
         empleado_id=empleado_id,
         empresa_id=current_user.empresa_id,
+        sucursal_id=current_user.empleado.sucursal_id,
         tipo="INGRESO",
         actividad="Fichaje rápido"
     )
@@ -123,7 +124,9 @@ def fichar_salida():
     asistencia = Asistencia(
         empleado_id=empleado_id,
         empresa_id=current_user.empresa_id,
-        tipo="SALIDA"
+        sucursal_id=current_user.empleado.sucursal_id,
+        tipo="SALIDA",
+        actividad="Fichaje rápido"
     )
 
     db.session.add(asistencia)

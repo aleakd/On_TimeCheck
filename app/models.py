@@ -19,8 +19,8 @@ class Empresa(db.Model):
         server_default=func.now()
     )
     # 🔐 SEGURIDAD RED
-    ip_publica = db.Column(db.String(50), nullable=True)
-    ip_rango = db.Column(db.String(50), nullable=True)
+    #ip_publica = db.Column(db.String(50), nullable=True)
+    #ip_rango = db.Column(db.String(50), nullable=True)
 
     usuarios = db.relationship('Usuario', backref='empresa', lazy=True)
     empleados = db.relationship('Empleado', backref='empresa', lazy=True)
@@ -30,25 +30,58 @@ class Empresa(db.Model):
         return f'<Empresa {self.nombre}>'
 
 # =========================
-# EMPLEADO
+# SUCURSAL
 # =========================
-class Empleado(db.Model):
-    __tablename__ = 'empleado'
+class Sucursal(db.Model):
+    __tablename__ = 'sucursal'
 
     id = db.Column(db.Integer, primary_key=True)
-
     empresa_id = db.Column(
         db.Integer,
         db.ForeignKey('empresa.id'),
         nullable=False
     )
+    nombre = db.Column(db.String(100), nullable=False)
+    ip_publica = db.Column(db.String(50), nullable=True)
+    ip_rango = db.Column(db.String(50), nullable=True)
+    activa = db.Column(db.Boolean, default=True)
 
+    empresa = db.relationship(
+        'Empresa',
+        backref=db.backref('sucursales', lazy=True)
+    )
+    empleados = db.relationship(
+        'Empleado',
+        back_populates='sucursal',
+        lazy=True
+    )
+
+
+# =========================
+# EMPLEADO
+# =========================
+class Empleado(db.Model):
+    __tablename__ = 'empleado'
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey('empresa.id'),
+        nullable=False
+    )
     dni = db.Column(db.String(20), nullable=False)
     apellido = db.Column(db.String(50), nullable=False)
     nombre = db.Column(db.String(50), nullable=False)
     activo = db.Column(db.Boolean, default=True)
-
     asistencias = db.relationship('Asistencia', backref='empleado', lazy=True)
+    sucursal_id = db.Column(
+        db.Integer,
+        db.ForeignKey('sucursal.id'),
+        nullable=False
+    )
+    sucursal = db.relationship(
+        'Sucursal',
+        back_populates='empleados'
+    )
 
     def __repr__(self):
         return f'<Empleado {self.apellido}, {self.nombre}>'
@@ -58,21 +91,17 @@ class Empleado(db.Model):
 # =========================
 class Asistencia(db.Model):
     __tablename__ = 'asistencia'
-
     id = db.Column(db.Integer, primary_key=True)
-
     empresa_id = db.Column(
         db.Integer,
         db.ForeignKey('empresa.id'),
         nullable=False
     )
-
     empleado_id = db.Column(
         db.Integer,
         db.ForeignKey('empleado.id'),
         nullable=False
     )
-
     tipo = db.Column(
         db.String(10),
         nullable=False
@@ -89,6 +118,13 @@ class Asistencia(db.Model):
         server_default=func.now(),
         nullable=False
     )
+    sucursal_id = db.Column(
+        db.Integer,
+        db.ForeignKey('sucursal.id'),
+        nullable=False
+    )
+
+    sucursal = db.relationship('Sucursal')
 
     def __repr__(self):
         return f'<Asistencia {self.tipo} - Empleado {self.empleado_id}>'

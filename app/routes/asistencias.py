@@ -149,9 +149,12 @@ def marcar_asistencia():
         # ==========================================
         # 💾 GUARDAR EN BD
         # ==========================================
+        empleado = Empleado.query.get(empleado_id)
+
         asistencia = Asistencia(
             empleado_id=empleado_id,
             empresa_id=current_user.empresa_id,
+            sucursal_id=empleado.sucursal_id,
             tipo=tipo,
             actividad=actividad if tipo == 'INGRESO' else None,
             fecha_hora=fecha_hora
