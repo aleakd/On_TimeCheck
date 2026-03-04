@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app.models import Empleado, Asistencia, db
 from datetime import datetime
 from sqlalchemy import func
-
+from zoneinfo import ZoneInfo
 from app.multitenant import empleados_empresa, asistencias_empresa
 from collections import defaultdict
 
@@ -17,7 +17,7 @@ main_bp = Blueprint('main', __name__)
 @login_required
 def dashboard():
 
-    hoy = datetime.now().date()
+    hoy = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
     ahora = datetime.now()
 
     # 👥 empleados activos
@@ -146,10 +146,14 @@ def dashboard():
             else:
                 estado = "salida"
 
+            hora_ar = registro.fecha_hora.astimezone(
+                ZoneInfo("America/Argentina/Buenos_Aires")
+            )
+
             empleados_estado.append({
                 "nombre": f"{emp.apellido} {emp.nombre}",
                 "estado": estado,
-                "hora": registro.fecha_hora.strftime("%H:%M")
+                "hora": hora_ar.strftime("%H:%M")
             })
 
         else:

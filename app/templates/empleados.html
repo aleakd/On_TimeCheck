@@ -20,6 +20,7 @@
                     <th>DNI</th>
                     <th>Apellido</th>
                     <th>Nombre</th>
+                    <th>Sucursal</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                     <th>Editar</th>
@@ -31,6 +32,7 @@
                     <td>{{ e.dni }}</td>
                     <td>{{ e.apellido }}</td>
                     <td>{{ e.nombre }}</td>
+                    <td>{{ e.sucursal.nombre }}</td>
                     <td>
                         {% if e.activo %}
                             <span class="badge bg-success">Activo</span>
