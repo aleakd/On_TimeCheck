@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lobster&family=Playwrite+NZ+Basic&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lobster&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playwrite+NZ+Basic&display=swap" rel="stylesheet">
 
     <!-- TABLAS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
@@ -31,7 +31,7 @@
     <div class="container-fluid px-3">
 
         <a class="navbar-brand brand-otc" href="{{ url_for('main.dashboard') }}">
-            <img src="{{ url_for('static', filename='img/logoOTC.png') }}" alt="logo">
+            <img src="{{ url_for('static', filename='img/logocorpo.png') }}" alt="logo">
             <span class="titulo">
                 OnTime<span class="brand-accent">Check</span>
             </span>
@@ -51,11 +51,10 @@
              {% endif %}
 
             {% if current_user.rol == 'admin' %}
-                <a href="/empleados" class="nav-link">👥 Empleados</a>
+                <a href="/empleados" class="nav-link">👥 Gestion de usuarios</a>
                 <a href="/auditoria" class="nav-link">🧾 Auditoría</a>
-                <a href="/usuarios" class="nav-link">🔐 Usuarios</a>
                 <a href="/empresa/configuracion" class="nav-link">🏢 Empresa</a>
-                <a href="/sucursales" class="nav-link">🏢 Sucursales</a>
+
             {% endif %}
 
 

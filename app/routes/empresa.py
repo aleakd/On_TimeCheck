@@ -19,6 +19,7 @@ empresa_bp = Blueprint(
 def configuracion_empresa():
 
     empresa = current_user.empresa
+    ip_actual = obtener_ip_cliente()
 
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
@@ -35,5 +36,6 @@ def configuracion_empresa():
 
     return render_template(
         'empresa_config.html',
-        empresa=empresa
+        empresa=empresa,
+        ip_actual=ip_actual
     )
