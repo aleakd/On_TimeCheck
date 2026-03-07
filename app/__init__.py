@@ -96,6 +96,9 @@ def create_app():
     from app.routes.sucursales import sucursales_bp
     app.register_blueprint(sucursales_bp)
 
+    from app.routes.kiosco import kiosco_bp
+    app.register_blueprint(kiosco_bp)
+
     # -------------------------------------------------------------------------------------------------------
     # 🔑 CREAR TABLAS SI NO EXISTEN
     with app.app_context():

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="kiosco-wrapper">
+
+    <div class="kiosco-header">
+
+        <h1>🕒 Registro de asistencia</h1>
+
+        <button onclick="pantallaCompleta()" class="fullscreen-btn">
+            ⛶ Pantalla completa
+        </button>
+
+    </div>
+
+    <div class="kiosco-card">
+
+        <div id="reloj" class="reloj"></div>
+
+        <p class="subtitle">
+            Ingrese su DNI
+        </p>
+
+        <input
+            id="dni"
+            class="dni-input"
+            placeholder="DNI"
+            autofocus
+        >
+
+        <button onclick="fichar()" class="btn-fichar">
+            FICHAR
+        </button>
+
+        <div id="mensaje" class="mensaje"></div>
+
+    </div>
+
+</div>
+
+
+<audio id="okSound">
+<source src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3">
+</audio>
+
+<audio id="errorSound">
+<source src="https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.mp3">
+</audio>
+
+
+<script>
+
+// reloj en vivo
+function actualizarReloj(){
+
+    const ahora = new Date();
+
+    const hora =
+        ahora.getHours().toString().padStart(2,'0') + ":" +
+        ahora.getMinutes().toString().padStart(2,'0') + ":" +
+        ahora.getSeconds().toString().padStart(2,'0');
+
+    document.getElementById("reloj").innerText = hora;
+
+}
+
+setInterval(actualizarReloj,1000);
+actualizarReloj();
+
+
+function fichar(){
+
+    const dni = document.getElementById("dni").value;
+
+    if(!dni){
+        mostrarMensaje("Ingrese DNI","error");
+        return;
+    }
+
+    fetch("/kiosco/fichar",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+            dni:dni
+        })
+    })
+    .then(res=>res.json())
+    .then(data=>{
+
+        if(data.status==="ok"){
+
+            document.getElementById("okSound").play();
+
+            mostrarMensaje(
+                data.tipo +
+                "<br>"+data.nombre+
+                "<br>"+data.sucursal+
+                "<br>"+data.hora,
+                "ok"
+            );
+
+            document.body.classList.add("bg-ok");
+
+        }else{
+
+            document.getElementById("errorSound").play();
+
+            mostrarMensaje(data.mensaje,"error");
+
+            document.body.classList.add("bg-error");
+
+        }
+
+        document.getElementById("dni").value="";
+
+        setTimeout(resetPantalla,3000);
+
+    });
+
+}
+
+
+function mostrarMensaje(texto,tipo){
+
+    const msg=document.getElementById("mensaje");
+
+    msg.innerHTML=texto;
+
+    msg.className="mensaje "+tipo;
+
+}
+
+function resetPantalla(){
+
+    document.getElementById("mensaje").innerHTML="";
+
+    document.body.classList.remove("bg-ok");
+    document.body.classList.remove("bg-error");
+
+}
+
+
+// ENTER ficha
+document.getElementById("dni")
+.addEventListener("keypress",function(e){
+
+    if(e.key==="Enter"){
+        fichar();
+    }
+
+});
+
+
+// mantener foco
+setInterval(()=>{
+    document.getElementById("dni").focus();
+},1000);
+
+
+// pantalla completa
+function pantallaCompleta(){
+
+    if(!document.fullscreenElement){
+
+        document.documentElement.requestFullscreen();
+
+    }else{
+
+        document.exitFullscreen();
+
+    }
+
+}
+
+</script>
+
+{% endblock %}
