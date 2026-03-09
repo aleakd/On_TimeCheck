@@ -24,7 +24,7 @@ def listado():
         asistencias_empresa()
         .join(Empleado)
         .order_by(Asistencia.fecha_hora.desc())
-        .limit(500)
+        .limit(1000)
         .all()
     )
 
