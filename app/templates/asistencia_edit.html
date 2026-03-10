@@ -23,7 +23,7 @@
         <label>Fecha y hora</label>
         <input type="datetime-local" name="fecha_hora"
                class="form-control"
-               value="{{ asistencia.fecha_hora.strftime('%Y-%m-%dT%H:%M') }}">
+               value="{{ (asistencia.fecha_hora | hora_ar).strftime('%Y-%m-%dT%H:%M') }}"
     </div>
 
     <button class="btn btn-primary">Guardar cambios</button>

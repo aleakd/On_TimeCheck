@@ -20,7 +20,7 @@
             <td>{{ a.empleado.apellido }}, {{ a.empleado.nombre }}</td>
             <td>{{ a.tipo }}</td>
             <td>{{ a.actividad or '-' }}</td>
-            <td>{{ a.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ (a.fecha_hora | hora_ar).strftime('%d/%m/%Y %H:%M') }}</td>
 
             <td>
                 <a href="/asistencias-admin/editar/{{ a.id }}"
