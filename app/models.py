@@ -82,6 +82,12 @@ class Empleado(db.Model):
         'Sucursal',
         back_populates='empleados'
     )
+    turno_inicio = db.Column(db.Time, nullable=True)
+    turno_fin = db.Column(db.Time, nullable=True)
+    tolerancia_minutos = db.Column(
+        db.Integer,
+        default=15
+    )
 
     def __repr__(self):
         return f'<Empleado {self.apellido}, {self.nombre}>'

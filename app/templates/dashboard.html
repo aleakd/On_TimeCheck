@@ -185,6 +185,46 @@
 </div>
 
 <!-- ===============================
+     LLEGADAS TARDES
+================================ -->
+{% if current_user.rol in ['admin','supervisor'] and alertas_tarde %}
+<div class="card shadow-sm p-4 mb-5">
+
+<h4 class="mb-3">⚠ Llegadas tarde hoy</h4>
+
+<table class="table table-sm table-striped">
+
+<thead>
+<tr>
+<th>Detalle</th>
+<th>Hora</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for alerta in alertas_tarde %}
+
+<tr>
+
+<td>{{ alerta.descripcion }}</td>
+
+<td>
+{{ (alerta.created_at | hora_ar).strftime('%H:%M') }}
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+{% endif %}
+
+<!-- ===============================
      GRÁFICO TENDENCIA
 ================================ -->
 <div class="card shadow-sm p-4 mb-5 chart-card">

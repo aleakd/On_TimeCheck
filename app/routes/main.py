@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
-from app.models import Empleado, Asistencia, db
-from datetime import datetime
+from app.models import Empleado, Asistencia, AuditLog, db
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import func
 from zoneinfo import ZoneInfo
 from app.multitenant import empleados_empresa, asistencias_empresa
@@ -17,13 +17,15 @@ main_bp = Blueprint('main', __name__)
 @login_required
 def dashboard():
 
-    hoy = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
+
+    hoy = datetime.now(tz_ar).date()
     ahora = datetime.now()
 
     # 👥 empleados activos
     total_empleados = empleados_empresa().filter_by(activo=True).count()
 
-    # 🕒 asistencias hoy (fecha completa correcta)
+    # 🕒 asistencias hoy
     asistencias_hoy = (
         asistencias_empresa()
         .filter(db.func.date(Asistencia.fecha_hora) == hoy)
@@ -45,7 +47,7 @@ def dashboard():
         if ultima and ultima.tipo == 'INGRESO':
             trabajando += 1
 
-    # ⏱ horas del mes en formato HH:MM
+    # ⏱ horas del mes
     primer_dia_mes = ahora.replace(day=1)
 
     asistencias_mes = (
@@ -59,52 +61,67 @@ def dashboard():
     ultimo_ingreso = {}
 
     for a in asistencias_mes:
+
         if a.tipo == 'INGRESO':
             ultimo_ingreso[a.empleado_id] = a.fecha_hora
 
         elif a.tipo == 'SALIDA' and a.empleado_id in ultimo_ingreso:
+
             delta = (a.fecha_hora - ultimo_ingreso[a.empleado_id]).total_seconds()
             total_segundos += delta
             ultimo_ingreso.pop(a.empleado_id)
 
     horas = int(total_segundos // 3600)
     minutos = int((total_segundos % 3600) // 60)
+
     horas_mes = f"{horas:02d}:{minutos:02d}"
 
     # ==========================================
     # 📈 HORAS POR DÍA (GRÁFICO)
     # ==========================================
 
-
     horas_por_dia = defaultdict(int)
     ultimo_ingreso = {}
 
     for a in asistencias_mes:
+
         fecha = a.fecha_hora.date()
 
         if a.tipo == 'INGRESO':
             ultimo_ingreso[a.empleado_id] = a.fecha_hora
 
         elif a.tipo == 'SALIDA' and a.empleado_id in ultimo_ingreso:
+
             delta = (a.fecha_hora - ultimo_ingreso[a.empleado_id]).total_seconds()
             horas_por_dia[fecha] += delta
             ultimo_ingreso.pop(a.empleado_id)
 
-    # convertir a formato gráfico
     labels = []
     data = []
 
     for dia in sorted(horas_por_dia.keys()):
+
         labels.append(dia.strftime("%d/%m"))
         data.append(round(horas_por_dia[dia] / 3600, 2))
 
+    # ==========================================
+    # 👤 EMPLEADOS SEGÚN ROL
+    # ==========================================
+
     if current_user.rol == "empleado":
+
         empleados = [current_user.empleado]
+
     else:
+
         empleados = Empleado.query.filter_by(
             empresa_id=current_user.empresa_id,
             activo=True
         ).all()
+
+    # ==========================================
+    # ESTADO ACTUAL DEL PERSONAL
+    # ==========================================
 
     subquery = (
         db.session.query(
@@ -129,10 +146,7 @@ def dashboard():
         .all()
     )
 
-    registro_dict = {
-        r.empleado_id: r
-        for r in ultimos_registros
-    }
+    registro_dict = {r.empleado_id: r for r in ultimos_registros}
 
     empleados_estado = []
 
@@ -141,14 +155,10 @@ def dashboard():
         registro = registro_dict.get(emp.id)
 
         if registro:
-            if registro.tipo == "INGRESO":
-                estado = "ingreso"
-            else:
-                estado = "salida"
 
-            hora_ar = registro.fecha_hora.astimezone(
-                ZoneInfo("America/Argentina/Buenos_Aires")
-            )
+            estado = "ingreso" if registro.tipo == "INGRESO" else "salida"
+
+            hora_ar = registro.fecha_hora.astimezone(tz_ar)
 
             empleados_estado.append({
                 "nombre": f"{emp.apellido} {emp.nombre}",
@@ -157,23 +167,45 @@ def dashboard():
             })
 
         else:
+
             empleados_estado.append({
                 "nombre": f"{emp.apellido} {emp.nombre}",
                 "estado": "sin_registro",
                 "hora": None
             })
 
-        orden_prioridad = {
-            "ingreso": 0,
-            "sin_registro": 1,
-            "salida": 2
-        }
+    orden_prioridad = {
+        "ingreso": 0,
+        "sin_registro": 1,
+        "salida": 2
+    }
 
-        empleados_estado.sort(
-            key=lambda x: orden_prioridad[x["estado"]]
+    empleados_estado.sort(key=lambda x: orden_prioridad[x["estado"]])
+
+    # ==========================================
+    # ⚠ LLEGADAS TARDE HOY
+    # ==========================================
+
+    inicio_dia_ar = datetime.now(tz_ar).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+    fin_dia_ar = inicio_dia_ar + timedelta(days=1)
+
+    inicio_utc = inicio_dia_ar.astimezone(timezone.utc)
+    fin_utc = fin_dia_ar.astimezone(timezone.utc)
+
+    alertas_tarde = (
+        db.session.query(AuditLog)
+        .filter(
+            AuditLog.empresa_id == current_user.empresa_id,
+            AuditLog.entidad == "PUNTUALIDAD",
+            AuditLog.created_at >= inicio_utc,
+            AuditLog.created_at < fin_utc
         )
-
-
+        .order_by(AuditLog.created_at.desc())
+        .all()
+    )
 
     return render_template(
         'dashboard.html',
@@ -185,7 +217,5 @@ def dashboard():
         chart_data=data,
         fecha_hoy=hoy,
         empleados_estado=empleados_estado,
+        alertas_tarde=alertas_tarde
     )
-
-
-

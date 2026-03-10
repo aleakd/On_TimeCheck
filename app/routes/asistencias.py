@@ -151,6 +151,33 @@ def marcar_asistencia():
         # ==========================================
         empleado = Empleado.query.get(empleado_id)
 
+        # ==========================================
+        # ⏰ CONTROL DE LLEGADA TARDE
+        # ==========================================
+
+        if tipo == "INGRESO" and empleado.turno_inicio:
+
+            hora_turno = empleado.turno_inicio
+            tolerancia = empleado.tolerancia_minutos or 0
+
+            hora_ingreso = fecha_hora.astimezone(tz_ar).time()
+
+            limite = (
+                    datetime.combine(datetime.today(), hora_turno) +
+                    timedelta(minutes=tolerancia)
+            ).time()
+
+            if hora_ingreso > limite:
+                registrar_evento(
+                    accion="ALERTA",
+                    entidad="PUNTUALIDAD",
+                    descripcion=(
+                        f"Llegada tarde: "
+                        f"{empleado.apellido}, {empleado.nombre} "
+                        f"(Ingreso {hora_ingreso.strftime('%H:%M')}, "
+                        f"Turno {hora_turno.strftime('%H:%M')})"
+                    )
+                )
         asistencia = Asistencia(
             empleado_id=empleado_id,
             empresa_id=current_user.empresa_id,

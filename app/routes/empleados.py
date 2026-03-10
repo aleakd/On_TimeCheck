@@ -39,6 +39,9 @@ def nuevo_empleado():
         dni = request.form.get('dni', '').strip()
         apellido = request.form.get('apellido', '').strip()
         nombre = request.form.get('nombre', '').strip()
+        turno_inicio = request.form.get('turno_inicio') or None
+        turno_fin = request.form.get('turno_fin') or None
+        tolerancia_minutos = request.form.get('tolerancia_minutos') or 15
         sucursal_id = request.form.get('sucursal_id')
 
         if not dni or not apellido or not nombre or not sucursal_id:
@@ -67,7 +70,10 @@ def nuevo_empleado():
             dni=dni,
             apellido=apellido,
             nombre=nombre,
-            activo=True
+            activo=True,
+            turno_inicio=turno_inicio,
+            turno_fin=turno_fin,
+            tolerancia_minutos=tolerancia_minutos
         )
 
         db.session.add(empleado)
