@@ -7,6 +7,7 @@ from app.services.excel_export import exportar_reporte_mensual_excel, exportar_d
 from app.roles import admin_o_supervisor
 from app.models import Empleado, Asistencia, db, Sucursal
 from app.multitenant import empleados_empresa, asistencias_empresa
+from zoneinfo import ZoneInfo
 
 
 MESES_ES = [
@@ -367,7 +368,7 @@ def exportar_detalle_empleado_excel_route(empleado_id):
 @admin_o_supervisor
 def reporte_diario():
 
-    hoy = datetime.utcnow().date()
+    hoy = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
     sucursal_id = request.args.get('sucursal_id', type=int)
 
     sucursales = Sucursal.query.filter_by(
@@ -448,7 +449,7 @@ def reporte_diario():
 @admin_o_supervisor
 def reporte_diario_detalle(empleado_id):
 
-    hoy = datetime.utcnow().date()
+    hoy = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
 
     empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
 
