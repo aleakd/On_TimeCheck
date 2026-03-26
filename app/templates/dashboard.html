@@ -23,7 +23,42 @@
     </div>
 
 </div>
+<!-- ===============================
+     QUIENES ESTÁN TRABAJANDO
+================================ -->
+{% if current_user.rol in ['admin','supervisor'] and empleados_trabajando %}
 
+<div class="card shadow-sm p-4 mb-5">
+
+<h4 class="mb-3">👷 Trabajando ahora</h4>
+
+<div class="row">
+
+{% for emp in empleados_trabajando %}
+
+<div class="col-md-3 mb-2">
+
+<div class="p-3 border rounded bg-light">
+
+<strong>{{ emp.nombre }}</strong>
+
+<br>
+
+<small class="text-muted">
+Desde {{ emp.hora }}
+</small>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+{% endif %}
 
 <!-- ===============================
      MÉTRICAS PRINCIPALES

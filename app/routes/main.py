@@ -129,8 +129,7 @@ def dashboard():
             func.max(Asistencia.fecha_hora).label("ultima_fecha")
         )
         .filter(
-            Asistencia.empresa_id == current_user.empresa_id,
-            func.date(Asistencia.fecha_hora) == hoy
+            Asistencia.empresa_id == current_user.empresa_id
         )
         .group_by(Asistencia.empleado_id)
         .subquery()
@@ -183,6 +182,15 @@ def dashboard():
     empleados_estado.sort(key=lambda x: orden_prioridad[x["estado"]])
 
     # ==========================================
+    # 👷 LISTA DE QUIENES ESTÁN TRABAJANDO
+    # ==========================================
+
+    empleados_trabajando = [
+        emp for emp in empleados_estado
+        if emp["estado"] == "ingreso"
+    ]
+
+    # ==========================================
     # ⚠ LLEGADAS TARDE HOY
     # ==========================================
 
@@ -217,5 +225,6 @@ def dashboard():
         chart_data=data,
         fecha_hoy=hoy,
         empleados_estado=empleados_estado,
+        empleados_trabajando=empleados_trabajando,
         alertas_tarde=alertas_tarde
     )
