@@ -28,7 +28,7 @@
 ================================ -->
 {% if current_user.rol in ['admin','supervisor'] and empleados_trabajando %}
 
-<div class="card shadow-sm p-4 mb-5">
+<div class="card shadow-sm p-4 mb-5" style="background-color:#CCFFD4">
 
 <h4 class="mb-3">👷 Trabajando ahora</h4>
 
@@ -223,9 +223,9 @@ Desde {{ emp.hora }}
      LLEGADAS TARDES
 ================================ -->
 {% if current_user.rol in ['admin','supervisor'] and alertas_tarde %}
-<div class="card shadow-sm p-4 mb-5">
+<div class="card shadow-sm p-4 mb-5" style="background-color:#FFCCCC;">
 
-<h4 class="mb-3">⚠ Llegadas tarde hoy</h4>
+<h4 class="mb-3" style="color:red;">⚠ Llegadas tarde hoy</h4>
 
 <table class="table table-sm table-striped">
 

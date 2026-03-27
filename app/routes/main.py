@@ -194,22 +194,12 @@ def dashboard():
     # ⚠ LLEGADAS TARDE HOY
     # ==========================================
 
-    inicio_dia_ar = datetime.now(tz_ar).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-
-    fin_dia_ar = inicio_dia_ar + timedelta(days=1)
-
-    inicio_utc = inicio_dia_ar.astimezone(timezone.utc)
-    fin_utc = fin_dia_ar.astimezone(timezone.utc)
-
     alertas_tarde = (
         db.session.query(AuditLog)
         .filter(
             AuditLog.empresa_id == current_user.empresa_id,
             AuditLog.entidad == "PUNTUALIDAD",
-            AuditLog.created_at >= inicio_utc,
-            AuditLog.created_at < fin_utc
+            db.func.date(AuditLog.created_at) == hoy
         )
         .order_by(AuditLog.created_at.desc())
         .all()

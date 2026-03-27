@@ -162,12 +162,17 @@ def marcar_asistencia():
 
             hora_ingreso = fecha_hora.astimezone(tz_ar).time()
 
-            limite = (
-                    datetime.combine(datetime.today(), hora_turno) +
-                    timedelta(minutes=tolerancia)
-            ).time()
+            fecha_local = fecha_hora.astimezone(tz_ar)
 
-            if hora_ingreso > limite:
+            limite_dt = datetime.combine(
+                fecha_local.date(),
+                hora_turno,
+                tzinfo=tz_ar
+            ) + timedelta(minutes=tolerancia)
+
+            hora_ingreso_dt = fecha_local
+
+            if hora_ingreso_dt > limite_dt:
                 registrar_evento(
                     accion="ALERTA",
                     entidad="PUNTUALIDAD",

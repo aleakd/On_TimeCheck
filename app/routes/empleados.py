@@ -4,7 +4,7 @@ from app.models import Empleado, db, Sucursal
 from app.multitenant import empleados_empresa
 from app.roles import solo_admin, admin_o_supervisor
 from app.audit import registrar_evento
-
+from datetime import datetime
 
 
 empleados_bp = Blueprint('empleados', __name__, url_prefix='/empleados')
@@ -35,6 +35,8 @@ def nuevo_empleado():
         activa=True
     ).all()
 
+
+
     if request.method == 'POST':
         dni = request.form.get('dni', '').strip()
         apellido = request.form.get('apellido', '').strip()
@@ -63,6 +65,14 @@ def nuevo_empleado():
         if existe:
             flash('Ya existe un empleado con ese DNI', 'warning')
             return redirect(url_for('empleados.nuevo_empleado'))
+
+
+        if turno_inicio:
+            turno_inicio = datetime.strptime(turno_inicio, "%H:%M").time()
+
+        if turno_fin:
+            turno_fin = datetime.strptime(turno_fin, "%H:%M").time()
+
 
         empleado = Empleado(
             empresa_id=current_user.empresa_id,
@@ -117,6 +127,18 @@ def editar_empleado(id):
         nombre = request.form.get('nombre')
         nueva_sucursal_id = int(request.form.get('sucursal_id'))
 
+        turno_inicio = request.form.get('turno_inicio') or None
+        turno_fin = request.form.get('turno_fin') or None
+        tolerancia_minutos = request.form.get('tolerancia_minutos') or 15
+
+        # Convertir a tipo TIME
+        if turno_inicio:
+            turno_inicio = datetime.strptime(turno_inicio, "%H:%M").time()
+
+        if turno_fin:
+            turno_fin = datetime.strptime(turno_fin, "%H:%M").time()
+
+
         # 🔒 Validar jornada abierta
         ultima = (
             Asistencia.query
@@ -134,6 +156,9 @@ def editar_empleado(id):
         empleado.apellido = apellido
         empleado.nombre = nombre
         empleado.sucursal_id = nueva_sucursal_id
+        empleado.turno_inicio = turno_inicio
+        empleado.turno_fin = turno_fin
+        empleado.tolerancia_minutos = int(tolerancia_minutos)
 
         db.session.commit()
 
