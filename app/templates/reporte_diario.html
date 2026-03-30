@@ -36,6 +36,7 @@
             <th>Horas trabajadas</th>
             <th>Estado</th>
             <th>Detalle</th>
+            <th>Acciones</th>
         </tr>
     </thead>
     <tbody>
@@ -52,11 +53,30 @@
             </td>
             <td><strong>{{ r.horas }}</strong></td>
             <td>
-                {% if r.estado == 'OK' %}
-                    <span class="badge bg-success">OK</span>
-                {% else %}
-                    <span class="badge bg-warning text-dark">EN CURSO</span>
-                {% endif %}
+            {% if r.estado == 'OK' %}
+            <span class="badge bg-success">OK</span>
+
+            {% elif r.estado == 'TARDE' %}
+            <span class="badge bg-danger">TARDE</span>
+
+            {% elif r.estado == 'AUSENTE' %}
+            <span class="badge bg-dark">AUSENTE</span>
+
+            {% elif r.estado == 'FRANCO' %}
+            <span class="badge bg-secondary">FRANCO</span>
+
+            {% elif r.estado == 'EXTRA' %}
+            <span class="badge bg-info">EXTRA</span>
+
+            {% elif r.estado == 'LICENCIA' %}
+            <span class="badge bg-warning text-dark">LICENCIA</span>
+
+            {% else %}
+            <span class="badge bg-light text-dark">-</span>
+            {% endif %}
+            </td>
+            <td>
+                {{ r.detalle }}
             </td>
 
             <td class="text-center">

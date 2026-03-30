@@ -562,3 +562,102 @@ tr:hover {
 .bg-error{
     background:#ffe8e8;
 }
+
+/* ================================
+   📅 HORARIOS CALENDARIO
+================================ */
+
+/* cajas de cada día */
+.dia-box {
+    border-radius: 8px;
+    padding: 6px;
+    transition: all 0.2s ease;
+}
+
+/* hover suave */
+.celda-dia:hover .dia-box {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* hora */
+.hora {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+/* ================================
+   🔥 TABLA BASE (CLAVE)
+================================ */
+
+.table {
+    border-collapse: separate !important;
+    border-spacing: 0;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    position: relative;
+}
+
+/* ================================
+   🧊 COLUMNA FIJA REAL
+   (usar .col-fija en HTML)
+================================ */
+
+.col-fija {
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 10;
+    min-width: 140px;
+}
+
+/* sombra lateral profesional */
+.col-fija::after {
+    content: "";
+    position: absolute;
+    right: -6px;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(to right, rgba(0,0,0,0.15), transparent);
+}
+
+/* header más arriba que el resto */
+th.col-fija {
+    z-index: 11;
+}
+
+/* ================================
+   🎯 FEEDBACK VISUAL CLICK
+================================ */
+
+.active-cell .dia-box {
+    outline: 2px solid #0d6efd;
+}
+
+/* ================================
+   📱 MOBILE
+================================ */
+
+@media (max-width: 768px) {
+
+    .col-fija {
+        min-width: 120px;
+        font-size: 12px;
+    }
+
+    .dia-box {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .hora {
+        font-size: 12px;
+    }
+
+    td, th {
+        min-width: 60px;
+    }
+}

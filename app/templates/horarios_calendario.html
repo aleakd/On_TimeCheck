@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>📅 Planificación mensual</h3>
+
+
+<form id="formHorario" class="mb-4">
+
+<div class="row">
+
+<div class="col-md-2">
+<select name="empleado_id" class="form-control">
+{% for e in empleados %}
+<option value="{{ e.id }}">{{ e.apellido }}</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="col-md-2">
+<input type="time" name="hora_inicio" class="form-control" required>
+</div>
+
+<div class="col-md-2">
+<input type="time" name="hora_fin" class="form-control" required>
+</div>
+
+<div class="col-md-4">
+
+<label>Días:</label><br>
+
+<label><input type="checkbox" name="dias" value="0"> L</label>
+<label><input type="checkbox" name="dias" value="1"> M</label>
+<label><input type="checkbox" name="dias" value="2"> X</label>
+<label><input type="checkbox" name="dias" value="3"> J</label>
+<label><input type="checkbox" name="dias" value="4"> V</label>
+<label><input type="checkbox" name="dias" value="5"> S</label>
+<label><input type="checkbox" name="dias" value="6"> D</label>
+
+</div>
+
+<div class="col-md-2">
+<button type="submit" class="btn btn-success w-100">
+Aplicar
+</button>
+</div>
+
+</div>
+
+<input type="hidden" name="anio" value="{{ anio }}">
+<input type="hidden" name="mes" value="{{ mes }}">
+
+</form>
+<div class="mb-3">
+    <span class="badge bg-success-subtle text-success">● Trabaja</span>
+    <span class="badge bg-light text-dark">F Franco</span>
+    <span class="badge bg-warning-subtle text-dark">L Licencia</span>
+</div>
+
+
+<div class="table-responsive">
+    <table class="table table-bordered table-sm">
+
+<thead>
+<tr>
+<th class="col-fija">Empleado</th>
+
+{% for d in dias %}
+<th class="text-center">
+    <div style="font-size:12px;">
+        {{ ["L","M","X","J","V","S","D"][d.weekday()] }}
+    </div>
+    <div>{{ d.day }}</div>
+</th>
+{% endfor %}
+
+</tr>
+</thead>
+
+<tbody>
+
+{% for emp in empleados %}
+<tr>
+
+<td class="col-fija"><strong>{{ emp.apellido }}</strong></td>
+
+{% for d in dias %}
+
+{% set h = horarios.get((emp.id, d)) %}
+
+<td class="celda-dia p-1 text-center"
+    data-empleado="{{ emp.id }}"
+    data-fecha="{{ d.strftime('%Y-%m-%d') }}"
+    data-tipo="{{ h.tipo if h else '' }}"
+    data-inicio="{{ h.hora_inicio.strftime('%H:%M') if h and h.hora_inicio else '' }}"
+    data-fin="{{ h.hora_fin.strftime('%H:%M') if h and h.hora_fin else '' }}"
+    style="cursor:pointer; min-width:70px;">
+
+<div class="dia-box
+    {% if h and h.tipo == 'TRABAJA' %}bg-success-subtle
+    {% elif h and h.tipo == 'FRANCO' %}bg-light
+    {% elif h and h.tipo == 'LICENCIA' %}bg-warning-subtle
+    {% else %}bg-white{% endif %}">
+
+    {% if h %}
+        {% if h.tipo == "TRABAJA" %}
+            <div class="fw-bold text-success">●</div>
+            <div class="hora">{{ h.hora_inicio.strftime('%H:%M') }}</div>
+        {% elif h.tipo == "FRANCO" %}
+            <div class="text-muted">F</div>
+        {% elif h.tipo == "LICENCIA" %}
+            <div class="text-warning">L</div>
+        {% endif %}
+    {% else %}
+        <div class="text-muted">-</div>
+    {% endif %}
+
+</div>
+</td>
+
+{% endfor %}
+
+</tr>
+{% endfor %}
+
+</tbody>
+</table>
+</div>
+
+<div class="modal fade" id="modalHorario" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content p-3">
+
+      <h5 id="modalTitulo">Editar día</h5>
+
+      <input type="hidden" id="m_empleado">
+      <input type="hidden" id="m_fecha">
+
+      <div class="mb-2">
+        <label>Tipo</label>
+        <select id="m_tipo" class="form-control">
+          <option value="TRABAJA">Trabaja</option>
+          <option value="FRANCO">Franco</option>
+          <option value="LICENCIA">Licencia</option>
+        </select>
+      </div>
+
+      <div class="mb-2">
+        <label>Inicio</label>
+        <input type="time" id="m_inicio" class="form-control">
+      </div>
+
+      <div class="mb-2">
+        <label>Fin</label>
+        <input type="time" id="m_fin" class="form-control">
+      </div>
+
+      <button class="btn btn-success w-100" onclick="guardarDia()">
+        Guardar
+      </button>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+document.getElementById("formHorario").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch("/horarios/aplicar", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.text())
+    .then(() => location.reload());
+});
+</script>
+
+<script>
+document.querySelectorAll(".celda-dia").forEach(celda => {
+
+    celda.addEventListener("click", () => {
+
+        // 🔵 FEEDBACK VISUAL
+        celda.classList.add("active-cell");
+
+        setTimeout(() => {
+            celda.classList.remove("active-cell");
+        }, 200);
+
+        const fecha = celda.dataset.fecha;
+
+        document.getElementById("m_empleado").value = celda.dataset.empleado;
+        document.getElementById("m_fecha").value = fecha;
+        document.getElementById("m_tipo").value = celda.dataset.tipo || "TRABAJA";
+        document.getElementById("m_inicio").value = celda.dataset.inicio || "";
+        document.getElementById("m_fin").value = celda.dataset.fin || "";
+
+        document.getElementById("modalTitulo").innerText = "Editar " + fecha;
+
+        new bootstrap.Modal(document.getElementById('modalHorario')).show();
+    });
+
+});
+</script>
+
+<script>
+function guardarDia(){
+
+    const data = new FormData();
+
+    data.append("empleado_id", document.getElementById("m_empleado").value);
+    data.append("fecha", document.getElementById("m_fecha").value);
+    data.append("tipo", document.getElementById("m_tipo").value);
+    data.append("inicio", document.getElementById("m_inicio").value);
+    data.append("fin", document.getElementById("m_fin").value);
+
+    fetch("/horarios/editar-dia", {
+        method: "POST",
+        body: data
+    })
+    .then(() => location.reload());
+}
+</script>
+
+<script>
+const tipoSelect = document.getElementById("m_tipo");
+const inicioInput = document.getElementById("m_inicio");
+const finInput = document.getElementById("m_fin");
+
+tipoSelect.addEventListener("change", () => {
+
+    if (tipoSelect.value !== "TRABAJA") {
+        inicioInput.value = "";
+        finInput.value = "";
+        inicioInput.disabled = true;
+        finInput.disabled = true;
+    } else {
+        inicioInput.disabled = false;
+        finInput.disabled = false;
+    }
+
+});
+</script>
+
+{% endblock %}

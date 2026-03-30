@@ -165,8 +165,8 @@ class Usuario(UserMixin, db.Model):
         return f'<Usuario {self.email}>'
 
 # =========================
- # AUDITORÍA DEL SISTEMA
- # ========================
+# AUDITORÍA DEL SISTEMA
+# ========================
 class AuditLog(db.Model):
     __tablename__ = 'audit_log'
     id = db.Column(db.Integer, primary_key=True)
@@ -193,3 +193,30 @@ class AuditLog(db.Model):
     usuario = db.relationship('Usuario')
     def __repr__(self):
         return f'<AuditLog {self.accion} - {self.entidad}>'
+
+
+# =========================
+# AUDITORÍA DEL SISTEMA
+# ========================
+class HorarioEmpleado(db.Model):
+    __tablename__ = "horario_empleado"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    empleado_id = db.Column(
+        db.Integer,
+        db.ForeignKey('empleado.id'),
+        nullable=False
+    )
+
+    fecha = db.Column(db.Date, nullable=False)
+
+    hora_inicio = db.Column(db.Time, nullable=True)
+    hora_fin = db.Column(db.Time, nullable=True)
+
+    tipo = db.Column(db.String(20), nullable=False)
+    # TRABAJA / FRANCO / LICENCIA / FERIADO
+
+    observacion = db.Column(db.String(200), nullable=True)
+
+    empleado = db.relationship("Empleado")

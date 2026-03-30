@@ -8,6 +8,8 @@ from app.roles import admin_o_supervisor
 from app.models import Empleado, Asistencia, db, Sucursal
 from app.multitenant import empleados_empresa, asistencias_empresa
 from zoneinfo import ZoneInfo
+from app.utils.evaluacion import evaluar_dia
+from app.models import HorarioEmpleado
 
 
 MESES_ES = [
@@ -423,12 +425,27 @@ def reporte_diario():
         horas = int(total_segundos // 3600)
         minutos = int((total_segundos % 3600) // 60)
 
+        fecha_actual = hoy
+
+        horario = HorarioEmpleado.query.filter_by(
+            empleado_id=empleado.id,
+            fecha=fecha_actual
+        ).first()
+
+        resultado = evaluar_dia(
+            empleado,
+            fecha_actual,
+            horario,
+            registros
+        )
+
         resumen.append({
             'empleado': empleado,
             'ingreso': ingreso,
             'salida': salida,
             'horas': f'{horas:02d}:{minutos:02d}',
-            'estado': 'OK' if not ultimo_ingreso else 'EN CURSO'
+            'estado': resultado["estado"],
+            'detalle': resultado["detalle"]
         })
 
     resumen.sort(key=lambda x: x['empleado'].apellido)

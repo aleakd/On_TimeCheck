@@ -1,7 +1,7 @@
 from flask import Flask, render_template, g
 from app.models import db
 from flask_login import LoginManager, current_user
-from app.models import Empresa, Asistencia, Usuario, AuditLog
+from app.models import Empresa, Asistencia, Usuario, AuditLog, HorarioEmpleado
 import os
 from zoneinfo import ZoneInfo
 from sqlalchemy import event
@@ -98,6 +98,9 @@ def create_app():
 
     from app.routes.kiosco import kiosco_bp
     app.register_blueprint(kiosco_bp)
+
+    from app.routes.horarios import horarios_bp
+    app.register_blueprint(horarios_bp)
 
     # -------------------------------------------------------------------------------------------------------
     # 🔑 CREAR TABLAS SI NO EXISTEN
