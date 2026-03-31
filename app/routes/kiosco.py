@@ -6,6 +6,8 @@ from app.models import db, Empleado, Asistencia, AuditLog
 from app.multitenant import empleados_empresa, asistencias_empresa
 from app.security import requiere_ip_empresa
 from app.audit import registrar_evento
+from app.services.horarios_service import evaluar_llegada_tarde, obtener_turno_dia
+
 
 kiosco_bp = Blueprint(
     "kiosco",
@@ -62,55 +64,51 @@ def fichar():
     else:
         tipo = "SALIDA"
 
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
+
     # =========================
-    # ⏰ CONTROL LLEGADA TARDE (SOLO INGRESO)
+    # ⏰ CONTROL LLEGADA TARDE
     # =========================
     if tipo == "INGRESO":
 
-        tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
         fecha_hora_ar = datetime.now(tz_ar)
 
-        if empleado.turno_inicio:
+        if evaluar_llegada_tarde(empleado, fecha_hora_ar):
 
-            hora_turno = empleado.turno_inicio
-            tolerancia = empleado.tolerancia_minutos or 0
-
-            inicio_turno_dt = datetime.combine(
-                fecha_hora_ar.date(),
-                hora_turno,
-                tzinfo=tz_ar
+            inicio_dia = fecha_hora_ar.replace(
+                hour=0, minute=0, second=0, microsecond=0
             )
+            fin_dia = inicio_dia + timedelta(days=1)
 
-            limite_dt = inicio_turno_dt + timedelta(minutes=tolerancia)
-
-            if fecha_hora_ar > limite_dt:
-
-                inicio_dia = fecha_hora_ar.replace(
-                    hour=0, minute=0, second=0, microsecond=0
+            ya_existe = db.session.query(db.exists().where(
+                db.and_(
+                    AuditLog.empresa_id == current_user.empresa_id,
+                    AuditLog.entidad == "PUNTUALIDAD",
+                    AuditLog.created_at >= inicio_dia.astimezone(timezone.utc),
+                    AuditLog.created_at < fin_dia.astimezone(timezone.utc)
                 )
-                fin_dia = inicio_dia + timedelta(days=1)
+            )).scalar()
 
-                ya_existe = db.session.query(db.exists().where(
-                    db.and_(
-                        AuditLog.empresa_id == current_user.empresa_id,
-                        AuditLog.entidad == "PUNTUALIDAD",
-                        AuditLog.descripcion.like(f"%{empleado.apellido}%"),
-                        AuditLog.created_at >= inicio_dia.astimezone(timezone.utc),
-                        AuditLog.created_at < fin_dia.astimezone(timezone.utc)
-                    )
-                )).scalar()
+            if not ya_existe:
 
-                if not ya_existe:
-                    registrar_evento(
-                        accion="ALERTA",
-                        entidad="PUNTUALIDAD",
-                        descripcion=(
-                            f"Llegada tarde: "
-                            f"{empleado.apellido}, {empleado.nombre} "
-                            f"(Ingreso {fecha_hora_ar.strftime('%H:%M')}, "
-                            f"Turno {hora_turno.strftime('%H:%M')})"
-                        )
+                turno = obtener_turno_dia(empleado, fecha_hora_ar)
+
+                hora_turno_str = (
+                    turno["inicio"].strftime('%H:%M')
+                    if turno and turno["inicio"]
+                    else "--:--"
+                )
+
+                registrar_evento(
+                    accion="ALERTA",
+                    entidad="PUNTUALIDAD",
+                    descripcion=(
+                        f"Llegada tarde: "
+                        f"{empleado.apellido}, {empleado.nombre} "
+                        f"(Ingreso {fecha_hora_ar.strftime('%H:%M')}, "
+                        f"Turno {hora_turno_str})"
                     )
+                )
 
     # =========================
     # 💾 GUARDAR ASISTENCIA
@@ -120,7 +118,8 @@ def fichar():
         empresa_id=current_user.empresa_id,
         sucursal_id=empleado.sucursal_id,
         tipo=tipo,
-        actividad="KIOSCO"
+        actividad="KIOSCO",
+        fecha_hora=datetime.now(timezone.utc)
     )
 
     db.session.add(asistencia)
@@ -136,6 +135,6 @@ def fichar():
         "status": "ok",
         "tipo": tipo,
         "nombre": f"{empleado.apellido} {empleado.nombre}",
-        "hora": datetime.now().strftime("%H:%M:%S"),
+        "hora": datetime.now(tz_ar).strftime("%H:%M:%S"),
         "sucursal": empleado.sucursal.nombre
     })

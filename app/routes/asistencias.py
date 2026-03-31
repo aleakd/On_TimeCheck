@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from app.models import db, Empleado, Asistencia
+from app.models import db, Empleado, Asistencia, AuditLog
 from app.multitenant import empleados_empresa, asistencias_empresa
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta, timezone
 from app.security import requiere_ip_empresa
 from app.audit import registrar_evento
+from app.services.horarios_service import evaluar_llegada_tarde, obtener_turno_dia
 
 
 asistencias_bp = Blueprint(
@@ -15,17 +16,11 @@ asistencias_bp = Blueprint(
 )
 
 
-# =====================================================
-# 🕒 MARCAR ASISTENCIA
-# =====================================================
 @asistencias_bp.route('/', methods=['GET', 'POST'])
 @login_required
 @requiere_ip_empresa
 def marcar_asistencia():
 
-    # ==========================================
-    # 👤 Detectar modo empleado
-    # ==========================================
     modo_empleado = current_user.rol == 'empleado'
 
     if modo_empleado:
@@ -38,9 +33,6 @@ def marcar_asistencia():
             .all()
         )
 
-    # ==========================================
-    # 🇦🇷 Calcular "HOY" en horario Argentina
-    # ==========================================
     tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
     ahora_ar = datetime.now(tz_ar)
 
@@ -49,7 +41,6 @@ def marcar_asistencia():
     )
     fin_dia_ar = inicio_dia_ar + timedelta(days=1)
 
-    # Convertir rango a UTC (como guarda la DB)
     inicio_utc = inicio_dia_ar.astimezone(timezone.utc)
     fin_utc = fin_dia_ar.astimezone(timezone.utc)
 
@@ -64,14 +55,8 @@ def marcar_asistencia():
         .all()
     )
 
-    # =====================================================
-    # 💾 POST — REGISTRAR ASISTENCIA
-    # =====================================================
     if request.method == 'POST':
 
-        # ----------------------------------
-        # 👤 EMPLEADO
-        # ----------------------------------
         if modo_empleado:
             empleado_id = int(current_user.empleado_id)
         else:
@@ -80,38 +65,30 @@ def marcar_asistencia():
         tipo = request.form.get('tipo')
         actividad = request.form.get('actividad')
 
-        # Campos manuales (solo admin)
         fecha_manual = request.form.get("fecha_manual")
         hora_manual = request.form.get("hora_manual")
 
-        # ==========================================
-        # 🕒 DEFINIR FECHA FINAL A GUARDAR
-        # ==========================================
+        # =========================
+        # 📅 FECHA (manual o automática)
+        # =========================
         if current_user.rol == "admin" and fecha_manual and hora_manual:
             try:
-                # Crear fecha en horario Argentina
                 fecha_str = f"{fecha_manual} {hora_manual}"
                 fecha_local = datetime.strptime(fecha_str, "%Y-%m-%d %H:%M")
                 fecha_local = fecha_local.replace(tzinfo=tz_ar)
-
-                # Convertir a UTC para guardar
                 fecha_hora = fecha_local.astimezone(timezone.utc)
-
             except Exception:
                 flash("❌ Fecha u hora manual inválida", "danger")
                 return redirect(url_for('asistencias.marcar_asistencia'))
         else:
-            # ⏱️ Automático
             fecha_hora = datetime.now(timezone.utc)
 
-        # 🚫 Bloquear fichajes futuros
+        # 🚫 evitar futuro
         if fecha_hora > datetime.now(timezone.utc):
             flash("❌ No se puede cargar asistencia en el futuro", "danger")
             return redirect(url_for('asistencias.marcar_asistencia'))
 
-        # ==========================================
-        # 🔎 VALIDACIONES
-        # ==========================================
+        # 🚫 validaciones básicas
         if not empleado_id or tipo not in ['INGRESO', 'SALIDA']:
             flash('❌ Datos inválidos', 'danger')
             return redirect(url_for('asistencias.marcar_asistencia'))
@@ -120,9 +97,9 @@ def marcar_asistencia():
             flash('⚠️ Debe seleccionar una actividad para el INGRESO', 'warning')
             return redirect(url_for('asistencias.marcar_asistencia'))
 
-        # ==========================================
-        # 🔒 VALIDACIÓN SECUENCIAL (ING/SAL)
-        # ==========================================
+        # =========================
+        # 🔁 CONTROL DE SECUENCIA
+        # =========================
         ultima = (
             asistencias_empresa()
             .filter(
@@ -146,43 +123,55 @@ def marcar_asistencia():
                 flash('❌ No puede registrar SALIDA sin INGRESO previo', 'warning')
                 return redirect(url_for('asistencias.marcar_asistencia'))
 
-        # ==========================================
-        # 💾 GUARDAR EN BD
-        # ==========================================
         empleado = Empleado.query.get(empleado_id)
 
-        # ==========================================
+        # =========================
         # ⏰ CONTROL DE LLEGADA TARDE
-        # ==========================================
+        # =========================
+        if tipo == "INGRESO":
 
-        if tipo == "INGRESO" and empleado.turno_inicio:
+            fecha_hora_ar = fecha_hora.astimezone(tz_ar)
 
-            hora_turno = empleado.turno_inicio
-            tolerancia = empleado.tolerancia_minutos or 0
+            if evaluar_llegada_tarde(empleado, fecha_hora_ar):
 
-            hora_ingreso = fecha_hora.astimezone(tz_ar).time()
-
-            fecha_local = fecha_hora.astimezone(tz_ar)
-
-            limite_dt = datetime.combine(
-                fecha_local.date(),
-                hora_turno,
-                tzinfo=tz_ar
-            ) + timedelta(minutes=tolerancia)
-
-            hora_ingreso_dt = fecha_local
-
-            if hora_ingreso_dt > limite_dt:
-                registrar_evento(
-                    accion="ALERTA",
-                    entidad="PUNTUALIDAD",
-                    descripcion=(
-                        f"Llegada tarde: "
-                        f"{empleado.apellido}, {empleado.nombre} "
-                        f"(Ingreso {hora_ingreso.strftime('%H:%M')}, "
-                        f"Turno {hora_turno.strftime('%H:%M')})"
-                    )
+                inicio_dia = fecha_hora_ar.replace(
+                    hour=0, minute=0, second=0, microsecond=0
                 )
+                fin_dia = inicio_dia + timedelta(days=1)
+
+                ya_existe = db.session.query(db.exists().where(
+                    db.and_(
+                        AuditLog.empresa_id == current_user.empresa_id,
+                        AuditLog.entidad == "PUNTUALIDAD",
+                        AuditLog.created_at >= inicio_dia.astimezone(timezone.utc),
+                        AuditLog.created_at < fin_dia.astimezone(timezone.utc)
+                    )
+                )).scalar()
+
+                if not ya_existe:
+
+                    turno = obtener_turno_dia(empleado, fecha_hora_ar)
+
+                    hora_turno_str = (
+                        turno["inicio"].strftime('%H:%M')
+                        if turno and turno["inicio"]
+                        else "--:--"
+                    )
+
+                    registrar_evento(
+                        accion="ALERTA",
+                        entidad="PUNTUALIDAD",
+                        descripcion=(
+                            f"Llegada tarde: "
+                            f"{empleado.apellido}, {empleado.nombre} "
+                            f"(Ingreso {fecha_hora_ar.strftime('%H:%M')}, "
+                            f"Turno {hora_turno_str})"
+                        )
+                    )
+
+        # =========================
+        # 💾 GUARDAR ASISTENCIA
+        # =========================
         asistencia = Asistencia(
             empleado_id=empleado_id,
             empresa_id=current_user.empresa_id,
@@ -195,11 +184,6 @@ def marcar_asistencia():
         db.session.add(asistencia)
         db.session.commit()
 
-        # ==========================================
-        # 🧾 AUDITORÍA
-        # ==========================================
-        empleado = Empleado.query.get(empleado_id)
-
         registrar_evento(
             accion="CREAR",
             entidad="ASISTENCIA",
@@ -209,9 +193,6 @@ def marcar_asistencia():
         flash('✅ Asistencia registrada correctamente', 'success')
         return redirect(url_for('asistencias.marcar_asistencia'))
 
-    # =====================================================
-    # 📄 GET — RENDER
-    # =====================================================
     return render_template(
         'asistencias.html',
         empleados=empleados,
