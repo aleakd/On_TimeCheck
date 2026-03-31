@@ -369,8 +369,18 @@ def exportar_detalle_empleado_excel_route(empleado_id):
 @login_required
 @admin_o_supervisor
 def reporte_diario():
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
 
-    hoy = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
+    fecha_str = request.args.get("fecha")
+
+    if fecha_str:
+        try:
+            hoy = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+        except:
+            hoy = datetime.now(tz_ar).date()
+    else:
+        hoy = datetime.now(tz_ar).date()
+
     sucursal_id = request.args.get('sucursal_id', type=int)
 
     sucursales = Sucursal.query.filter_by(
@@ -465,8 +475,17 @@ def reporte_diario():
 @login_required
 @admin_o_supervisor
 def reporte_diario_detalle(empleado_id):
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
 
-    hoy = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
+    fecha_str = request.args.get("fecha")
+
+    if fecha_str:
+        try:
+            hoy = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+        except:
+            hoy = datetime.now(tz_ar).date()
+    else:
+        hoy = datetime.now(tz_ar).date()
 
     empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
 

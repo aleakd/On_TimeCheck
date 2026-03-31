@@ -7,6 +7,13 @@
     <div class="row">
 
         <div class="col-md-3">
+            <input type="date"
+                   name="fecha"
+                   class="form-control"
+                   value="{{ fecha.strftime('%Y-%m-%d') }}">
+        </div>
+
+        <div class="col-md-3">
             <select name="sucursal_id" class="form-select">
                 <option value="">Todas las sucursales</option>
                 {% for s in sucursales %}
@@ -80,7 +87,9 @@
             </td>
 
             <td class="text-center">
-                <a href="{{ url_for('reportes.reporte_diario_detalle', empleado_id=r.empleado.id) }}"
+                <a href="{{ url_for('reportes.reporte_diario_detalle',
+                    empleado_id=r.empleado.id,
+                    fecha=fecha.strftime('%Y-%m-%d')) }}"
                    class="btn btn-sm btn-outline-primary">
                     🔍
                 </a>
