@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, send_file
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from sqlalchemy import extract
 from flask_login import login_required, current_user
@@ -41,7 +41,9 @@ def index():
 @admin_o_supervisor
 def reporte_mensual():
 
-    hoy = datetime.utcnow()
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
+
+    hoy = datetime.now(tz_ar)
     primer_dia_mes_actual = hoy.replace(day=1)
     ultimo_dia_mes_anterior = primer_dia_mes_actual - timedelta(days=1)
 
@@ -53,12 +55,29 @@ def reporte_mensual():
         empresa_id=current_user.empresa_id
     ).all()
 
+    # =========================
+    # 🧠 RANGO CORRECTO EN UTC
+    # =========================
+    inicio_mes_ar = datetime(year, month, 1, tzinfo=tz_ar)
+
+    if month == 12:
+        fin_mes_ar = datetime(year + 1, 1, 1, tzinfo=tz_ar)
+    else:
+        fin_mes_ar = datetime(year, month + 1, 1, tzinfo=tz_ar)
+
+    inicio_utc = inicio_mes_ar.astimezone(timezone.utc)
+    fin_utc = fin_mes_ar.astimezone(timezone.utc)
+
+    # 🔥 buffer para capturar salidas cruzadas
+    buffer_inicio = inicio_utc - timedelta(hours=12)
+    buffer_fin = fin_utc + timedelta(hours=12)
+
     query = (
         asistencias_empresa()
         .join(Empleado)
         .filter(
-            extract('year', Asistencia.fecha_hora) == year,
-            extract('month', Asistencia.fecha_hora) == month
+            Asistencia.fecha_hora >= buffer_inicio,
+            Asistencia.fecha_hora < buffer_fin
         )
     )
 
@@ -70,12 +89,19 @@ def reporte_mensual():
         Asistencia.fecha_hora
     ).all()
 
+    # =========================
+    # 🧩 AGRUPAR POR EMPLEADO
+    # =========================
     registros_por_empleado = defaultdict(list)
+
     for a in asistencias:
         registros_por_empleado[a.empleado].append(a)
 
     resumen = []
 
+    # =========================
+    # 🔄 PROCESAR CADA EMPLEADO
+    # =========================
     for empleado, registros in registros_por_empleado.items():
 
         ultimo_ingreso = None
@@ -84,18 +110,28 @@ def reporte_mensual():
         estado = 'CERRADO'
 
         for r in registros:
+
+            fecha_local = r.fecha_hora.astimezone(tz_ar)
+
             if r.tipo == 'INGRESO':
-                ultimo_ingreso = r.fecha_hora
-                dias_trabajados.add(r.fecha_hora.date())
+                ultimo_ingreso = fecha_local
 
             elif r.tipo == 'SALIDA' and ultimo_ingreso:
-                total_segundos += (r.fecha_hora - ultimo_ingreso).total_seconds()
+
+                # 👉 el bloque pertenece al mes del INGRESO
+                if ultimo_ingreso.month == month:
+
+                    total_segundos += (fecha_local - ultimo_ingreso).total_seconds()
+                    dias_trabajados.add(ultimo_ingreso.date())
+
                 ultimo_ingreso = None
 
-        if ultimo_ingreso:
+        # 🔥 si quedó ingreso abierto dentro del mes → incompleto
+        if ultimo_ingreso and ultimo_ingreso.month == month:
             estado = 'INCOMPLETO'
 
         if total_segundos > 0:
+
             horas = int(total_segundos // 3600)
             minutos = int((total_segundos % 3600) // 60)
 
@@ -108,6 +144,7 @@ def reporte_mensual():
             })
 
     resumen.sort(key=lambda x: x['empleado'].apellido)
+
     nombre_mes = f"{MESES_ES[month]} {year}"
 
     return render_template(
@@ -119,7 +156,6 @@ def reporte_mensual():
         sucursales=sucursales,
         sucursal_id=sucursal_id
     )
-
 # =========================================================
 # DESCARGA REPORTE EXCEL
 # =========================================================
