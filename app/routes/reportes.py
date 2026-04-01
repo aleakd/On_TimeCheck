@@ -469,9 +469,15 @@ def reporte_diario_detalle(empleado_id):
             ingreso = fecha_local
 
         elif r.tipo == "SALIDA" and ingreso:
+            segundos = (fecha_local - ingreso).total_seconds()
+            h = int(segundos // 3600)
+            m = int((segundos % 3600) // 60)
+
             bloques.append({
                 "ingreso": ingreso,
                 "salida": fecha_local,
+                "horas": f"{h:02d}:{m:02d}",
+                "estado": "OK",
                 "actividad": r.actividad or "-"
             })
             ingreso = None
@@ -481,6 +487,8 @@ def reporte_diario_detalle(empleado_id):
         bloques.append({
             "ingreso": ingreso,
             "salida": None,
+            "horas": "00:00",
+            "estado": "INCOMPLETO",
             "actividad": "-"
         })
 
