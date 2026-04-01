@@ -82,7 +82,7 @@ def procesar_bloques(registros, tz_ar, month):
 
             ingreso = None
 
-    # ingreso sin salida (incompleto real)
+    # ingreso sin salida (real)
     if ingreso:
         bloques.append({
             "fecha": ingreso.date(),
@@ -91,12 +91,19 @@ def procesar_bloques(registros, tz_ar, month):
             "actividad": "-"
         })
 
-    # 🔥 filtrar por mes DESPUÉS de armar bloques
-    bloques_mes = [
-        b for b in bloques if b["fecha"].month == month
-    ]
+    # 🔥 FILTRAR BIEN POR MES
+    bloques_mes = []
 
-    # 🔥 calcular horas y estado
+    for b in bloques:
+
+        mes_ingreso = b["ingreso"].month
+        mes_salida = b["salida"].month if b["salida"] else None
+
+        # ✔ incluir si el bloque pertenece al mes
+        if mes_ingreso == month or mes_salida == month:
+            bloques_mes.append(b)
+
+    # 🔥 calcular resultado final
     resultado = []
 
     for b in bloques_mes:
@@ -123,6 +130,8 @@ def procesar_bloques(registros, tz_ar, month):
         })
 
     return resultado
+
+
 
 
 # =========================================================
@@ -286,6 +295,33 @@ def exportar_mensual_excel():
     return send_file(file, as_attachment=True)
 
 
+@reportes_bp.route('/mensual/<int:empleado_id>/excel')
+@login_required
+@admin_o_supervisor
+def exportar_detalle_empleado_excel_route(empleado_id):
+
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
+
+    year = request.args.get('year', type=int)
+    month = request.args.get('month', type=int)
+
+    empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
+
+    inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
+
+    registros = obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc)
+
+    detalle = procesar_bloques(registros, tz_ar, month)
+
+    file = exportar_detalle_empleado_excel(
+        empleado,
+        f"{MESES_ES[month]} {year}",
+        detalle
+    )
+
+    return send_file(file, as_attachment=True)
+
+
 # =========================================================
 # REPORTE DIARIO (FIX TOTAL)
 # =========================================================
@@ -382,7 +418,9 @@ def reporte_diario():
         sucursales=sucursales,
         sucursal_id=sucursal_id
     )
-
+# =========================================================
+# REPORTE DIARIO por empleado
+# =========================================================
 @reportes_bp.route('/diario/<int:empleado_id>')
 @login_required
 @admin_o_supervisor
@@ -434,28 +472,3 @@ def reporte_diario_detalle(empleado_id):
         fecha=dia
     )
 
-@reportes_bp.route('/mensual/<int:empleado_id>/excel')
-@login_required
-@admin_o_supervisor
-def exportar_detalle_empleado_excel_route(empleado_id):
-
-    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
-
-    year = request.args.get('year', type=int)
-    month = request.args.get('month', type=int)
-
-    empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
-
-    inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
-
-    registros = obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc)
-
-    detalle = procesar_bloques(registros, tz_ar, month)
-
-    file = exportar_detalle_empleado_excel(
-        empleado,
-        f"{MESES_ES[month]} {year}",
-        detalle
-    )
-
-    return send_file(file, as_attachment=True)
