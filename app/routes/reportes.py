@@ -455,20 +455,41 @@ def reporte_diario_detalle(empleado_id):
         .all()
     )
 
-    detalle = []
+    bloques = []
+    ingreso = None
 
     for r in registros:
-        fecha_local = r.fecha_hora.astimezone(tz_ar).date()
 
-        if fecha_local == dia:
-            detalle.append(r)
+        fecha_local = r.fecha_hora.astimezone(tz_ar)
+
+        if fecha_local.date() != dia:
+            continue
+
+        if r.tipo == "INGRESO":
+            ingreso = fecha_local
+
+        elif r.tipo == "SALIDA" and ingreso:
+            bloques.append({
+                "ingreso": ingreso,
+                "salida": fecha_local,
+                "actividad": r.actividad or "-"
+            })
+            ingreso = None
+
+    # ingreso sin salida
+    if ingreso:
+        bloques.append({
+            "ingreso": ingreso,
+            "salida": None,
+            "actividad": "-"
+        })
 
     empleado = Empleado.query.get_or_404(empleado_id)
 
     return render_template(
         "reporte_diario_detalle.html",
         empleado=empleado,
-        bloques=detalle,  # 👈 clave
+        bloques=bloques,  # 👈 clave
         fecha=dia
     )
 
