@@ -268,6 +268,8 @@ def reporte_diario():
     fecha = request.args.get("fecha")
     hoy = datetime.strptime(fecha, "%Y-%m-%d").date() if fecha else datetime.now(tz_ar).date()
 
+    sucursal_id = request.args.get("sucursal_id", type=int)
+
     inicio_ar = datetime.combine(hoy, datetime.min.time(), tzinfo=tz_ar)
     fin_ar = inicio_ar + timedelta(days=1)
 
@@ -277,17 +279,16 @@ def reporte_diario():
     buffer_inicio = inicio_utc - timedelta(hours=12)
     buffer_fin = fin_utc + timedelta(hours=12)
 
-    asistencias = (
-        asistencias_empresa()
-        .filter(
-            Asistencia.fecha_hora >= buffer_inicio,
-            Asistencia.fecha_hora < buffer_fin
-        )
-        .order_by(Asistencia.fecha_hora)
-        .all()
+    query = asistencias_empresa().filter(
+        Asistencia.fecha_hora >= buffer_inicio,
+        Asistencia.fecha_hora < buffer_fin
     )
 
-    # 🔥 AGRUPAR POR EMPLEADO
+    if sucursal_id:
+        query = query.filter(Asistencia.sucursal_id == sucursal_id)
+
+    asistencias = query.order_by(Asistencia.fecha_hora).all()
+
     registros_por_empleado = defaultdict(list)
 
     for a in asistencias:
@@ -300,41 +301,55 @@ def reporte_diario():
 
     for empleado, registros in registros_por_empleado.items():
 
+        bloques = []
         ingreso = None
-        salida = None
 
         for r in registros:
+            fecha_local = r.fecha_hora.astimezone(tz_ar)
+
             if r.tipo == "INGRESO":
-                ingreso = r.fecha_hora.astimezone(tz_ar)
-            elif r.tipo == "SALIDA":
-                salida = r.fecha_hora.astimezone(tz_ar)
+                ingreso = fecha_local
+
+            elif r.tipo == "SALIDA" and ingreso:
+                bloques.append((ingreso, fecha_local))
+                ingreso = None
+
+        total_segundos = sum(
+            (salida - ingreso).total_seconds()
+            for ingreso, salida in bloques
+        )
 
         horas = "00:00"
+        estado = "AUSENTE"
 
-        if ingreso and salida:
-            segundos = (salida - ingreso).total_seconds()
-            h = int(segundos // 3600)
-            m = int((segundos % 3600) // 60)
+        if total_segundos > 0:
+            h = int(total_segundos // 3600)
+            m = int((total_segundos % 3600) // 60)
             horas = f"{h:02d}:{m:02d}"
             estado = "OK"
-        elif ingreso and not salida:
+
+        elif ingreso:
             estado = "INCOMPLETO"
-        else:
-            estado = "AUSENTE"
 
         resumen.append({
             "empleado": empleado,
-            "ingreso": ingreso,
-            "salida": salida,
+            "ingreso": bloques[0][0] if bloques else ingreso,
+            "salida": bloques[-1][1] if bloques else None,
             "horas": horas,
             "estado": estado,
-            "detalle": ""
+            "detalle": f"{len(bloques)} bloque(s)"
         })
+
+    sucursales = Sucursal.query.filter_by(
+        empresa_id=current_user.empresa_id
+    ).all()
 
     return render_template(
         "reporte_diario.html",
         resumen=resumen,
-        fecha=hoy
+        fecha=hoy,
+        sucursales=sucursales,
+        sucursal_id=sucursal_id
     )
 
 @reportes_bp.route('/diario/<int:empleado_id>')
@@ -384,7 +399,7 @@ def reporte_diario_detalle(empleado_id):
     return render_template(
         "reporte_diario_detalle.html",
         empleado=empleado,
-        registros=detalle,
+        bloques=detalle,  # 👈 clave
         fecha=dia
     )
 

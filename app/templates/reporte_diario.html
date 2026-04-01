@@ -40,51 +40,31 @@
             <th>Empleado</th>
             <th>Ingreso</th>
             <th>Salida</th>
-            <th>Horas trabajadas</th>
+            <th>Horas</th>
             <th>Estado</th>
+            <th>Bloques</th>
             <th>Detalle</th>
-            <th>Acciones</th>
         </tr>
     </thead>
     <tbody>
         {% for r in resumen %}
         <tr>
             <td>{{ r.empleado.apellido }}, {{ r.empleado.nombre }}</td>
-            <td>
-                {{ (r.ingreso | hora_ar).strftime('%H:%M') if r.ingreso else '-' }}
-
-            </td>
-            <td>
-                {{ (r.salida | hora_ar).strftime('%H:%M') if r.salida else '-' }}
-
-            </td>
+            <td>{{ (r.ingreso | hora_ar).strftime('%H:%M') if r.ingreso else '-' }}</td>
+            <td>{{ (r.salida | hora_ar).strftime('%H:%M') if r.salida else '-' }}</td>
             <td><strong>{{ r.horas }}</strong></td>
+
             <td>
-            {% if r.estado == 'OK' %}
-            <span class="badge bg-success">OK</span>
-
-            {% elif r.estado == 'TARDE' %}
-            <span class="badge bg-danger">TARDE</span>
-
-            {% elif r.estado == 'AUSENTE' %}
-            <span class="badge bg-dark">AUSENTE</span>
-
-            {% elif r.estado == 'FRANCO' %}
-            <span class="badge bg-secondary">FRANCO</span>
-
-            {% elif r.estado == 'EXTRA' %}
-            <span class="badge bg-info">EXTRA</span>
-
-            {% elif r.estado == 'LICENCIA' %}
-            <span class="badge bg-warning text-dark">LICENCIA</span>
-
-            {% else %}
-            <span class="badge bg-light text-dark">-</span>
-            {% endif %}
+                {% if r.estado == 'OK' %}
+                    <span class="badge bg-success">OK</span>
+                {% elif r.estado == 'INCOMPLETO' %}
+                    <span class="badge bg-warning text-dark">Incompleto</span>
+                {% else %}
+                    <span class="badge bg-dark">Ausente</span>
+                {% endif %}
             </td>
-            <td>
-                {{ r.detalle }}
-            </td>
+
+            <td>{{ r.detalle }}</td>
 
             <td class="text-center">
                 <a href="{{ url_for('reportes.reporte_diario_detalle',
@@ -94,12 +74,11 @@
                     🔍
                 </a>
             </td>
-
         </tr>
         {% else %}
         <tr>
-            <td colspan="5" class="text-center text-muted">
-                No hay registros para hoy
+            <td colspan="7" class="text-center text-muted">
+                No hay registros para este día
             </td>
         </tr>
         {% endfor %}
