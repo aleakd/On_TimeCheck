@@ -1,15 +1,16 @@
 from flask import Blueprint, render_template, request, send_file
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
-from sqlalchemy import extract
 from flask_login import login_required, current_user
-from app.services.excel_export import exportar_reporte_mensual_excel, exportar_detalle_empleado_excel
+from app.services.excel_export import (
+    exportar_reporte_mensual_excel,
+    exportar_detalle_empleado_excel
+)
 from app.roles import admin_o_supervisor
-from app.models import Empleado, Asistencia, db, Sucursal
+from app.models import Empleado, Asistencia, db, Sucursal, HorarioEmpleado
 from app.multitenant import empleados_empresa, asistencias_empresa
 from zoneinfo import ZoneInfo
 from app.utils.evaluacion import evaluar_dia
-from app.models import HorarioEmpleado
 
 
 MESES_ES = [
@@ -17,47 +18,13 @@ MESES_ES = [
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ]
 
-reportes_bp = Blueprint(
-    'reportes',
-    __name__,
-    url_prefix='/reportes'
-)
+reportes_bp = Blueprint('reportes', __name__, url_prefix='/reportes')
 
 
 # =========================================================
-# HOME REPORTES
+# 🧠 HELPERS (CLAVE PARA TODO)
 # =========================================================
-@reportes_bp.route('/')
-@login_required
-def index():
-    return render_template('reportes_index.html')
-
-
-# =========================================================
-# REPORTE MENSUAL GENERAL (CON FILTRO SUCURSAL)
-# =========================================================
-@reportes_bp.route('/mensual')
-@login_required
-@admin_o_supervisor
-def reporte_mensual():
-
-    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
-
-    hoy = datetime.now(tz_ar)
-    primer_dia_mes_actual = hoy.replace(day=1)
-    ultimo_dia_mes_anterior = primer_dia_mes_actual - timedelta(days=1)
-
-    year = request.args.get('year', ultimo_dia_mes_anterior.year, type=int)
-    month = request.args.get('month', ultimo_dia_mes_anterior.month, type=int)
-    sucursal_id = request.args.get('sucursal_id', type=int)
-
-    sucursales = Sucursal.query.filter_by(
-        empresa_id=current_user.empresa_id
-    ).all()
-
-    # =========================
-    # 🧠 RANGO CORRECTO EN UTC
-    # =========================
+def obtener_rango_mes(year, month, tz_ar):
     inicio_mes_ar = datetime(year, month, 1, tzinfo=tz_ar)
 
     if month == 12:
@@ -68,354 +35,84 @@ def reporte_mensual():
     inicio_utc = inicio_mes_ar.astimezone(timezone.utc)
     fin_utc = fin_mes_ar.astimezone(timezone.utc)
 
-    # 🔥 buffer para capturar salidas cruzadas
+    return inicio_utc, fin_utc
+
+
+def obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc):
     buffer_inicio = inicio_utc - timedelta(hours=12)
     buffer_fin = fin_utc + timedelta(hours=12)
 
-    query = (
+    return (
         asistencias_empresa()
-        .join(Empleado)
         .filter(
             Asistencia.fecha_hora >= buffer_inicio,
-            Asistencia.fecha_hora < buffer_fin
-        )
-    )
-
-    if sucursal_id:
-        query = query.filter(Asistencia.sucursal_id == sucursal_id)
-
-    asistencias = query.order_by(
-        Empleado.apellido,
-        Asistencia.fecha_hora
-    ).all()
-
-    # =========================
-    # 🧩 AGRUPAR POR EMPLEADO
-    # =========================
-    registros_por_empleado = defaultdict(list)
-
-    for a in asistencias:
-        registros_por_empleado[a.empleado].append(a)
-
-    resumen = []
-
-    # =========================
-    # 🔄 PROCESAR CADA EMPLEADO
-    # =========================
-    for empleado, registros in registros_por_empleado.items():
-
-        ultimo_ingreso = None
-        total_segundos = 0
-        dias_trabajados = set()
-        estado = 'CERRADO'
-
-        for r in registros:
-
-            fecha_local = r.fecha_hora.astimezone(tz_ar)
-
-            if r.tipo == 'INGRESO':
-                ultimo_ingreso = fecha_local
-
-            elif r.tipo == 'SALIDA' and ultimo_ingreso:
-
-                # 👉 el bloque pertenece al mes del INGRESO
-                if ultimo_ingreso.month == month:
-
-                    total_segundos += (fecha_local - ultimo_ingreso).total_seconds()
-                    dias_trabajados.add(ultimo_ingreso.date())
-
-                ultimo_ingreso = None
-
-        # 🔥 si quedó ingreso abierto dentro del mes → incompleto
-        if ultimo_ingreso and ultimo_ingreso.month == month:
-            estado = 'INCOMPLETO'
-
-        if total_segundos > 0:
-
-            horas = int(total_segundos // 3600)
-            minutos = int((total_segundos % 3600) // 60)
-
-            resumen.append({
-                'empleado': empleado,
-                'empleado_id': empleado.id,
-                'horas': f'{horas:02d}:{minutos:02d}',
-                'dias': len(dias_trabajados),
-                'estado': estado
-            })
-
-    resumen.sort(key=lambda x: x['empleado'].apellido)
-
-    nombre_mes = f"{MESES_ES[month]} {year}"
-
-    return render_template(
-        'reporte_mensual.html',
-        resumen=resumen,
-        year=year,
-        month=month,
-        nombre_mes=nombre_mes,
-        sucursales=sucursales,
-        sucursal_id=sucursal_id
-    )
-# =========================================================
-# DESCARGA REPORTE EXCEL
-# =========================================================
-@reportes_bp.route('/mensual/excel')
-@login_required
-@admin_o_supervisor
-def exportar_mensual_excel():
-
-    from datetime import datetime, timedelta
-
-    hoy = datetime.utcnow()
-
-    primer_dia_mes_actual = hoy.replace(day=1)
-    ultimo_dia_mes_anterior = primer_dia_mes_actual - timedelta(days=1)
-
-    year = request.args.get('year', ultimo_dia_mes_anterior.year, type=int)
-    month = request.args.get('month', ultimo_dia_mes_anterior.month, type=int)
-
-    asistencias = (
-        asistencias_empresa()
-        .join(Empleado)
-        .filter(
-            extract('year', Asistencia.fecha_hora) == year,
-            extract('month', Asistencia.fecha_hora) == month
-        )
-        .order_by(Empleado.apellido, Asistencia.fecha_hora)
-        .all()
-    )
-
-    registros_por_empleado = defaultdict(list)
-
-    for a in asistencias:
-        registros_por_empleado[a.empleado].append(a)
-
-    resumen = []
-
-    for empleado, registros in registros_por_empleado.items():
-
-        ultimo_ingreso = None
-        total_segundos = 0
-        dias_trabajados = set()
-        estado = 'CERRADO'
-
-        for r in registros:
-
-            if r.tipo == 'INGRESO':
-                ultimo_ingreso = r.fecha_hora
-                dias_trabajados.add(r.fecha_hora.date())
-
-            elif r.tipo == 'SALIDA' and ultimo_ingreso:
-                total_segundos += (r.fecha_hora - ultimo_ingreso).total_seconds()
-                ultimo_ingreso = None
-
-        if ultimo_ingreso:
-            estado = 'INCOMPLETO'
-
-        if total_segundos > 0:
-
-            horas = int(total_segundos // 3600)
-            minutos = int((total_segundos % 3600) // 60)
-
-            resumen.append({
-                'empleado': empleado,
-                'horas': f'{horas:02d}:{minutos:02d}',
-                'dias': len(dias_trabajados),
-                'estado': estado
-            })
-
-    nombre_mes = f"{MESES_ES[month]} {year}"
-
-    file = exportar_reporte_mensual_excel(
-        current_user.empresa.nombre,
-        nombre_mes,
-        resumen
-    )
-
-    return send_file(
-        file,
-        as_attachment=True,
-        download_name=f"reporte_mensual_{month}_{year}.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-# =========================================================
-# DETALLE MENSUAL POR EMPLEADO
-# =========================================================
-@reportes_bp.route('/mensual/<int:empleado_id>')
-@login_required
-@admin_o_supervisor
-def detalle_mensual_empleado(empleado_id):
-
-    year = request.args.get('year', type=int)
-    month = request.args.get('month', type=int)
-
-    if not year or not month:
-        return "Mes inválido", 400
-
-    empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
-
-    asistencias = (
-        asistencias_empresa()
-        .filter(
-            Asistencia.empleado_id == empleado_id,
-            extract('year', Asistencia.fecha_hora) == year,
-            extract('month', Asistencia.fecha_hora) == month
+            Asistencia.fecha_hora < buffer_fin,
+            *( [Asistencia.empleado_id == empleado_id] if empleado_id else [] )
         )
         .order_by(Asistencia.fecha_hora)
         .all()
     )
 
-    detalle = []
-    bloque_actual = None
-    contador_por_dia = defaultdict(int)
 
-    for a in asistencias:
+def procesar_bloques(registros, tz_ar, month):
+    resultado = []
+    ultimo_ingreso = None
 
-        if a.tipo == 'INGRESO':
-            fecha = a.fecha_hora.date()
-            contador_por_dia[fecha] += 1
+    for r in registros:
 
-            bloque_actual = {
-                'fecha': fecha,
-                'bloque': contador_por_dia[fecha],
-                'ingreso': a.fecha_hora,
-                'salida': None,
-                'actividad': a.actividad,
-                'estado': 'INCOMPLETO',
-                'horas': '00:00'
-            }
+        fecha_local = r.fecha_hora.astimezone(tz_ar)
 
-        elif a.tipo == 'SALIDA' and bloque_actual:
-            total_segundos = (a.fecha_hora - bloque_actual['ingreso']).total_seconds()
-            horas = int(total_segundos // 3600)
-            minutos = int((total_segundos % 3600) // 60)
+        if r.tipo == "INGRESO":
+            ultimo_ingreso = fecha_local
 
-            bloque_actual.update({
-                'salida': a.fecha_hora,
-                'horas': f'{horas:02d}:{minutos:02d}',
-                'estado': 'OK'
+        elif r.tipo == "SALIDA" and ultimo_ingreso:
+
+            if ultimo_ingreso.month != month:
+                ultimo_ingreso = None
+                continue
+
+            segundos = (fecha_local - ultimo_ingreso).total_seconds()
+
+            horas = int(segundos // 3600)
+            minutos = int((segundos % 3600) // 60)
+
+            resultado.append({
+                "fecha": ultimo_ingreso.date(),
+                "ingreso": ultimo_ingreso,
+                "salida": fecha_local,
+                "horas": f"{horas:02d}:{minutos:02d}",
+                "estado": "OK",
+                "actividad": r.actividad or "-"
             })
 
-            detalle.append(bloque_actual)
-            bloque_actual = None
+            ultimo_ingreso = None
 
-    if bloque_actual:
-        detalle.append(bloque_actual)
+    if ultimo_ingreso and ultimo_ingreso.month == month:
+        resultado.append({
+            "fecha": ultimo_ingreso.date(),
+            "ingreso": ultimo_ingreso,
+            "salida": None,
+            "horas": "00:00",
+            "estado": "INCOMPLETO",
+            "actividad": "-"
+        })
 
-    nombre_mes = f"{MESES_ES[month]} {year}"
+    return resultado
 
-    return render_template(
-        'reporte_mensual_detalle.html',
-        empleado=empleado,
-        detalle=detalle,
-        nombre_mes=nombre_mes,
-        year=year,
-        month=month
-    )
 
 # =========================================================
-# DETALLE MENSUAL POR EMPLEADO descarga excel
+# REPORTE MENSUAL
 # =========================================================
-@reportes_bp.route('/mensual/<int:empleado_id>/excel')
+@reportes_bp.route('/mensual')
 @login_required
 @admin_o_supervisor
-def exportar_detalle_empleado_excel_route(empleado_id):
+def reporte_mensual():
 
-    year = request.args.get('year', type=int)
-    month = request.args.get('month', type=int)
-
-    empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
-
-    asistencias = (
-        asistencias_empresa()
-        .filter(
-            Asistencia.empleado_id == empleado_id,
-            extract('year', Asistencia.fecha_hora) == year,
-            extract('month', Asistencia.fecha_hora) == month
-        )
-        .order_by(Asistencia.fecha_hora)
-        .all()
-    )
-
-    # reutilizamos tu lógica actual
-    detalle = []
-    bloque_actual = None
-    contador_por_dia = defaultdict(int)
-
-    for a in asistencias:
-
-        if a.tipo == 'INGRESO':
-
-            fecha = a.fecha_hora.date()
-            contador_por_dia[fecha] += 1
-
-            bloque_actual = {
-                'fecha': fecha,
-                'bloque': contador_por_dia[fecha],
-                'ingreso': a.fecha_hora,
-                'salida': None,
-                'actividad': a.actividad,
-                'estado': 'INCOMPLETO',
-                'horas': '00:00'
-            }
-
-        elif a.tipo == 'SALIDA' and bloque_actual:
-
-            salida = a.fecha_hora
-            ingreso = bloque_actual['ingreso']
-
-            total_segundos = (salida - ingreso).total_seconds()
-
-            horas = int(total_segundos // 3600)
-            minutos = int((total_segundos % 3600) // 60)
-
-            bloque_actual.update({
-                'salida': salida,
-                'horas': f'{horas:02d}:{minutos:02d}',
-                'estado': 'OK'
-            })
-
-            detalle.append(bloque_actual)
-            bloque_actual = None
-
-    if bloque_actual:
-        detalle.append(bloque_actual)
-
-    nombre_mes = f"{MESES_ES[month]} {year}"
-
-    file = exportar_detalle_empleado_excel(
-        current_user.empresa.nombre,
-        f"{empleado.apellido} {empleado.nombre}",
-        nombre_mes,
-        detalle
-    )
-
-    return send_file(
-        file,
-        as_attachment=True,
-        download_name=f"detalle_{empleado.apellido}_{month}_{year}.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-# =========================================================
-# REPORTE DIARIO GENERAL (CON FILTRO SUCURSAL)
-# =========================================================
-@reportes_bp.route('/diario')
-@login_required
-@admin_o_supervisor
-def reporte_diario():
     tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
 
-    fecha_str = request.args.get("fecha")
-
-    if fecha_str:
-        try:
-            hoy = datetime.strptime(fecha_str, "%Y-%m-%d").date()
-        except:
-            hoy = datetime.now(tz_ar).date()
-    else:
-        hoy = datetime.now(tz_ar).date()
+    hoy = datetime.now(tz_ar)
+    year = request.args.get('year', hoy.year, type=int)
+    month = request.args.get('month', hoy.month, type=int)
 
     sucursal_id = request.args.get('sucursal_id', type=int)
 
@@ -423,157 +120,163 @@ def reporte_diario():
         empresa_id=current_user.empresa_id
     ).all()
 
-    query = (
-        asistencias_empresa()
-        .join(Empleado)
-        .filter(
-            db.func.date(
-                db.func.timezone(
-                    'America/Argentina/Buenos_Aires',
-                    Asistencia.fecha_hora
-                )
-            ) == hoy
-        )
-    )
+    inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
 
-    if sucursal_id:
-        query = query.filter(Asistencia.sucursal_id == sucursal_id)
+    asistencias = obtener_asistencias_mes(None, inicio_utc, fin_utc)
 
-    asistencias = query.order_by(
-        Empleado.apellido,
-        Asistencia.fecha_hora
-    ).all()
+    registros_por_empleado = defaultdict(list)
 
-    reporte = defaultdict(list)
     for a in asistencias:
-        reporte[a.empleado].append(a)
+        registros_por_empleado[a.empleado].append(a)
 
     resumen = []
 
-    for empleado, registros in reporte.items():
+    for empleado, registros in registros_por_empleado.items():
 
-        ingreso = None
-        salida = None
-        ultimo_ingreso = None
-        total_segundos = 0
+        bloques = procesar_bloques(registros, tz_ar, month)
 
-        for r in registros:
-            if r.tipo == 'INGRESO':
-                ultimo_ingreso = r.fecha_hora
-                if not ingreso:
-                    ingreso = r.fecha_hora
-
-            elif r.tipo == 'SALIDA' and ultimo_ingreso:
-                salida = r.fecha_hora
-                total_segundos += (r.fecha_hora - ultimo_ingreso).total_seconds()
-                ultimo_ingreso = None
-
-        horas = int(total_segundos // 3600)
-        minutos = int((total_segundos % 3600) // 60)
-
-        fecha_actual = hoy
-
-        horario = HorarioEmpleado.query.filter_by(
-            empleado_id=empleado.id,
-            fecha=fecha_actual
-        ).first()
-
-        resultado = evaluar_dia(
-            empleado,
-            fecha_actual,
-            horario,
-            registros
+        total_segundos = sum(
+            (b["salida"] - b["ingreso"]).total_seconds()
+            for b in bloques if b["salida"]
         )
 
-        resumen.append({
-            'empleado': empleado,
-            'ingreso': ingreso,
-            'salida': salida,
-            'horas': f'{horas:02d}:{minutos:02d}',
-            'estado': resultado["estado"],
-            'detalle': resultado["detalle"]
-        })
+        if total_segundos > 0:
+            horas = int(total_segundos // 3600)
+            minutos = int((total_segundos % 3600) // 60)
 
-    resumen.sort(key=lambda x: x['empleado'].apellido)
+            resumen.append({
+                "empleado": empleado,
+                "empleado_id": empleado.id,
+                "horas": f"{horas:02d}:{minutos:02d}",
+                "dias": len(set(b["fecha"] for b in bloques)),
+                "estado": "OK"
+            })
+
+    resumen.sort(key=lambda x: x["empleado"].apellido)
 
     return render_template(
-        'reporte_diario.html',
+        "reporte_mensual.html",
         resumen=resumen,
-        fecha=hoy,
+        year=year,
+        month=month,
+        nombre_mes=f"{MESES_ES[month]} {year}",
         sucursales=sucursales,
         sucursal_id=sucursal_id
     )
 
+
 # =========================================================
-# DETALLE DIARIO POR EMPLEADO
+# DETALLE MENSUAL EMPLEADO
 # =========================================================
-@reportes_bp.route('/diario/<int:empleado_id>')
+@reportes_bp.route('/mensual/<int:empleado_id>')
 @login_required
 @admin_o_supervisor
-def reporte_diario_detalle(empleado_id):
+def detalle_mensual_empleado(empleado_id):
+
     tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
 
-    fecha_str = request.args.get("fecha")
-
-    if fecha_str:
-        try:
-            hoy = datetime.strptime(fecha_str, "%Y-%m-%d").date()
-        except:
-            hoy = datetime.now(tz_ar).date()
-    else:
-        hoy = datetime.now(tz_ar).date()
+    year = request.args.get('year', type=int)
+    month = request.args.get('month', type=int)
 
     empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
+
+    inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
+
+    registros = obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc)
+
+    detalle = procesar_bloques(registros, tz_ar, month)
+
+    return render_template(
+        "reporte_mensual_detalle.html",
+        empleado=empleado,
+        detalle=detalle,
+        nombre_mes=f"{MESES_ES[month]} {year}",
+        year=year,
+        month=month
+    )
+
+
+# =========================================================
+# EXPORTAR MENSUAL EXCEL
+# =========================================================
+@reportes_bp.route('/mensual/excel')
+@login_required
+@admin_o_supervisor
+def exportar_mensual_excel():
+
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
+
+    hoy = datetime.now(tz_ar)
+    year = request.args.get('year', hoy.year, type=int)
+    month = request.args.get('month', hoy.month, type=int)
+
+    inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
+
+    asistencias = obtener_asistencias_mes(None, inicio_utc, fin_utc)
+
+    registros_por_empleado = defaultdict(list)
+
+    for a in asistencias:
+        registros_por_empleado[a.empleado].append(a)
+
+    resumen = []
+
+    for empleado, registros in registros_por_empleado.items():
+
+        bloques = procesar_bloques(registros, tz_ar, month)
+
+        total_segundos = sum(
+            (b["salida"] - b["ingreso"]).total_seconds()
+            for b in bloques if b["salida"]
+        )
+
+        if total_segundos > 0:
+            horas = int(total_segundos // 3600)
+            minutos = int((total_segundos % 3600) // 60)
+
+            resumen.append({
+                "empleado": empleado,
+                "horas": f"{horas:02d}:{minutos:02d}",
+                "dias": len(set(b["fecha"] for b in bloques)),
+                "estado": "OK"
+            })
+
+    file = exportar_reporte_mensual_excel(
+        current_user.empresa.nombre,
+        f"{MESES_ES[month]} {year}",
+        resumen
+    )
+
+    return send_file(file, as_attachment=True)
+
+
+# =========================================================
+# REPORTE DIARIO (FIX TOTAL)
+# =========================================================
+@reportes_bp.route('/diario')
+@login_required
+@admin_o_supervisor
+def reporte_diario():
+
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
+
+    fecha = request.args.get("fecha")
+    hoy = datetime.strptime(fecha, "%Y-%m-%d").date() if fecha else datetime.now(tz_ar).date()
+
+    inicio_ar = datetime.combine(hoy, datetime.min.time(), tzinfo=tz_ar)
+    fin_ar = inicio_ar + timedelta(days=1)
+
+    inicio_utc = inicio_ar.astimezone(timezone.utc)
+    fin_utc = fin_ar.astimezone(timezone.utc)
 
     asistencias = (
         asistencias_empresa()
         .filter(
-            Asistencia.empleado_id == empleado_id,
-            db.func.date(
-                db.func.timezone(
-                    'America/Argentina/Buenos_Aires',
-                    Asistencia.fecha_hora
-                )
-            ) == hoy
+            Asistencia.fecha_hora >= inicio_utc,
+            Asistencia.fecha_hora < fin_utc
         )
         .order_by(Asistencia.fecha_hora)
         .all()
     )
 
-    bloques = []
-    bloque_actual = None
-
-    for a in asistencias:
-
-        if a.tipo == 'INGRESO':
-            bloque_actual = {
-                'ingreso': a.fecha_hora,
-                'salida': None,
-                'actividad': a.actividad,
-                'estado': 'INCOMPLETO',
-                'horas': '00:00'
-            }
-
-        elif a.tipo == 'SALIDA' and bloque_actual:
-            total_segundos = (a.fecha_hora - bloque_actual['ingreso']).total_seconds()
-            horas = int(total_segundos // 3600)
-            minutos = int((total_segundos % 3600) // 60)
-
-            bloque_actual.update({
-                'salida': a.fecha_hora,
-                'horas': f'{horas:02d}:{minutos:02d}',
-                'estado': 'OK'
-            })
-
-            bloques.append(bloque_actual)
-            bloque_actual = None
-
-    if bloque_actual:
-        bloques.append(bloque_actual)
-
-    return render_template(
-        'reporte_diario_detalle.html',
-        empleado=empleado,
-        bloques=bloques,
-        fecha=hoy
-    )
+    return render_template("reporte_diario.html", asistencias=asistencias, fecha=hoy)
