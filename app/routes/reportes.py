@@ -20,7 +20,12 @@ MESES_ES = [
 
 reportes_bp = Blueprint('reportes', __name__, url_prefix='/reportes')
 
+@reportes_bp.route('/')
+@login_required
+@admin_o_supervisor
+def index_reportes():
 
+    return render_template("reportes_index.html")
 # =========================================================
 # 🧠 HELPERS (CLAVE PARA TODO)
 # =========================================================
