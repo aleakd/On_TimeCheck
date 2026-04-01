@@ -337,6 +337,57 @@ def reporte_diario():
         fecha=hoy
     )
 
+@reportes_bp.route('/diario/<int:empleado_id>')
+@login_required
+@admin_o_supervisor
+def reporte_diario_detalle(empleado_id):
+
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
+
+    fecha = request.args.get("fecha")
+
+    if not fecha:
+        return "Fecha requerida", 400
+
+    dia = datetime.strptime(fecha, "%Y-%m-%d").date()
+
+    inicio_ar = datetime.combine(dia, datetime.min.time(), tzinfo=tz_ar)
+    fin_ar = inicio_ar + timedelta(days=1)
+
+    inicio_utc = inicio_ar.astimezone(timezone.utc)
+    fin_utc = fin_ar.astimezone(timezone.utc)
+
+    buffer_inicio = inicio_utc - timedelta(hours=12)
+    buffer_fin = fin_utc + timedelta(hours=12)
+
+    registros = (
+        asistencias_empresa()
+        .filter(
+            Asistencia.empleado_id == empleado_id,
+            Asistencia.fecha_hora >= buffer_inicio,
+            Asistencia.fecha_hora < buffer_fin
+        )
+        .order_by(Asistencia.fecha_hora)
+        .all()
+    )
+
+    detalle = []
+
+    for r in registros:
+        fecha_local = r.fecha_hora.astimezone(tz_ar).date()
+
+        if fecha_local == dia:
+            detalle.append(r)
+
+    empleado = Empleado.query.get_or_404(empleado_id)
+
+    return render_template(
+        "reporte_diario_detalle.html",
+        empleado=empleado,
+        registros=detalle,
+        fecha=dia
+    )
+
 @reportes_bp.route('/mensual/<int:empleado_id>/excel')
 @login_required
 @admin_o_supervisor
