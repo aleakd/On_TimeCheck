@@ -26,6 +26,8 @@
 
 <body class="bg-light">
 
+
+{% if not modo_kiosco %}
 <!-- NAVBAR SUPERIOR -->
 <nav class="navbar nave shadow-sm">
     <div class="container-fluid px-3">
@@ -76,6 +78,7 @@
 
     </div>
 </nav>
+{% endif %}
 
 <!-- MENU LATERAL -->
 <div class="offcanvas offcanvas-start bg-dark text-light" tabindex="-1" id="menuLateral">

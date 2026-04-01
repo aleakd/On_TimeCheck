@@ -27,7 +27,7 @@ def pantalla():
     if current_user.rol not in ["admin", "supervisor"]:
         return "No autorizado", 403
 
-    return render_template("kiosco.html")
+    return render_template("kiosco.html", modo_kiosco=True)
 
 
 # ==========================================
