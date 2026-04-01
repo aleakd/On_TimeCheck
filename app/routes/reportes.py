@@ -60,46 +60,66 @@ def obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc):
 
 
 def procesar_bloques(registros, tz_ar, month):
-    resultado = []
-    ultimo_ingreso = None
+
+    bloques = []
+    ingreso = None
 
     for r in registros:
 
         fecha_local = r.fecha_hora.astimezone(tz_ar)
 
         if r.tipo == "INGRESO":
-            ultimo_ingreso = fecha_local
+            ingreso = fecha_local
 
-        elif r.tipo == "SALIDA" and ultimo_ingreso:
+        elif r.tipo == "SALIDA" and ingreso:
 
-            if ultimo_ingreso.month != month:
-                ultimo_ingreso = None
-                continue
-
-            segundos = (fecha_local - ultimo_ingreso).total_seconds()
-
-            horas = int(segundos // 3600)
-            minutos = int((segundos % 3600) // 60)
-
-            resultado.append({
-                "fecha": ultimo_ingreso.date(),
-                "ingreso": ultimo_ingreso,
+            bloques.append({
+                "fecha": ingreso.date(),
+                "ingreso": ingreso,
                 "salida": fecha_local,
-                "horas": f"{horas:02d}:{minutos:02d}",
-                "estado": "OK",
                 "actividad": r.actividad or "-"
             })
 
-            ultimo_ingreso = None
+            ingreso = None
 
-    if ultimo_ingreso and ultimo_ingreso.month == month:
-        resultado.append({
-            "fecha": ultimo_ingreso.date(),
-            "ingreso": ultimo_ingreso,
+    # ingreso sin salida (incompleto real)
+    if ingreso:
+        bloques.append({
+            "fecha": ingreso.date(),
+            "ingreso": ingreso,
             "salida": None,
-            "horas": "00:00",
-            "estado": "INCOMPLETO",
             "actividad": "-"
+        })
+
+    # 🔥 filtrar por mes DESPUÉS de armar bloques
+    bloques_mes = [
+        b for b in bloques if b["fecha"].month == month
+    ]
+
+    # 🔥 calcular horas y estado
+    resultado = []
+
+    for b in bloques_mes:
+
+        if b["salida"]:
+            segundos = (b["salida"] - b["ingreso"]).total_seconds()
+            h = int(segundos // 3600)
+            m = int((segundos % 3600) // 60)
+
+            estado = "OK"
+            horas = f"{h:02d}:{m:02d}"
+
+        else:
+            estado = "INCOMPLETO"
+            horas = "00:00"
+
+        resultado.append({
+            "fecha": b["fecha"],
+            "ingreso": b["ingreso"],
+            "salida": b["salida"],
+            "horas": horas,
+            "estado": estado,
+            "actividad": b["actividad"]
         })
 
     return resultado
@@ -149,12 +169,17 @@ def reporte_mensual():
             horas = int(total_segundos // 3600)
             minutos = int((total_segundos % 3600) // 60)
 
+            estado = "OK"
+
+            if any(b["estado"] == "INCOMPLETO" for b in bloques):
+                estado = "INCOMPLETO"
+
             resumen.append({
                 "empleado": empleado,
                 "empleado_id": empleado.id,
                 "horas": f"{horas:02d}:{minutos:02d}",
                 "dias": len(set(b["fecha"] for b in bloques)),
-                "estado": "OK"
+                "estado": estado
             })
 
     resumen.sort(key=lambda x: x["empleado"].apellido)
@@ -239,11 +264,17 @@ def exportar_mensual_excel():
             horas = int(total_segundos // 3600)
             minutos = int((total_segundos % 3600) // 60)
 
+            estado = "OK"
+
+            if any(b["estado"] == "INCOMPLETO" for b in bloques):
+                estado = "INCOMPLETO"
+
             resumen.append({
                 "empleado": empleado,
+                "empleado_id": empleado.id,
                 "horas": f"{horas:02d}:{minutos:02d}",
                 "dias": len(set(b["fecha"] for b in bloques)),
-                "estado": "OK"
+                "estado": estado
             })
 
     file = exportar_reporte_mensual_excel(
