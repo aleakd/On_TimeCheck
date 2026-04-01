@@ -274,7 +274,6 @@ def reporte_diario():
     inicio_utc = inicio_ar.astimezone(timezone.utc)
     fin_utc = fin_ar.astimezone(timezone.utc)
 
-    # 🔥 BUFFER (CLAVE)
     buffer_inicio = inicio_utc - timedelta(hours=12)
     buffer_fin = fin_utc + timedelta(hours=12)
 
@@ -288,18 +287,53 @@ def reporte_diario():
         .all()
     )
 
-    # 🔥 FILTRAR EN PYTHON POR DÍA REAL (ARGENTINA)
-    asistencias_filtradas = []
+    # 🔥 AGRUPAR POR EMPLEADO
+    registros_por_empleado = defaultdict(list)
 
     for a in asistencias:
         fecha_local = a.fecha_hora.astimezone(tz_ar).date()
 
         if fecha_local == hoy:
-            asistencias_filtradas.append(a)
+            registros_por_empleado[a.empleado].append(a)
+
+    resumen = []
+
+    for empleado, registros in registros_por_empleado.items():
+
+        ingreso = None
+        salida = None
+
+        for r in registros:
+            if r.tipo == "INGRESO":
+                ingreso = r.fecha_hora.astimezone(tz_ar)
+            elif r.tipo == "SALIDA":
+                salida = r.fecha_hora.astimezone(tz_ar)
+
+        horas = "00:00"
+
+        if ingreso and salida:
+            segundos = (salida - ingreso).total_seconds()
+            h = int(segundos // 3600)
+            m = int((segundos % 3600) // 60)
+            horas = f"{h:02d}:{m:02d}"
+            estado = "OK"
+        elif ingreso and not salida:
+            estado = "INCOMPLETO"
+        else:
+            estado = "AUSENTE"
+
+        resumen.append({
+            "empleado": empleado,
+            "ingreso": ingreso,
+            "salida": salida,
+            "horas": horas,
+            "estado": estado,
+            "detalle": ""
+        })
 
     return render_template(
         "reporte_diario.html",
-        asistencias=asistencias_filtradas,
+        resumen=resumen,
         fecha=hoy
     )
 
