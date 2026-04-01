@@ -274,18 +274,34 @@ def reporte_diario():
     inicio_utc = inicio_ar.astimezone(timezone.utc)
     fin_utc = fin_ar.astimezone(timezone.utc)
 
+    # 🔥 BUFFER (CLAVE)
+    buffer_inicio = inicio_utc - timedelta(hours=12)
+    buffer_fin = fin_utc + timedelta(hours=12)
+
     asistencias = (
         asistencias_empresa()
         .filter(
-            Asistencia.fecha_hora >= inicio_utc,
-            Asistencia.fecha_hora < fin_utc
+            Asistencia.fecha_hora >= buffer_inicio,
+            Asistencia.fecha_hora < buffer_fin
         )
         .order_by(Asistencia.fecha_hora)
         .all()
     )
 
-    return render_template("reporte_diario.html", asistencias=asistencias, fecha=hoy)
+    # 🔥 FILTRAR EN PYTHON POR DÍA REAL (ARGENTINA)
+    asistencias_filtradas = []
 
+    for a in asistencias:
+        fecha_local = a.fecha_hora.astimezone(tz_ar).date()
+
+        if fecha_local == hoy:
+            asistencias_filtradas.append(a)
+
+    return render_template(
+        "reporte_diario.html",
+        asistencias=asistencias_filtradas,
+        fecha=hoy
+    )
 
 @reportes_bp.route('/mensual/<int:empleado_id>/excel')
 @login_required
