@@ -80,7 +80,20 @@ def editar(id):
 
         asistencia.tipo = tipo
         asistencia.actividad = actividad if tipo == 'INGRESO' else None
-        asistencia.fecha_hora = datetime.strptime(fecha_hora, "%Y-%m-%dT%H:%M")
+        from zoneinfo import ZoneInfo
+        from datetime import timezone
+
+        tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
+
+        fecha_local = datetime.strptime(fecha_hora, "%Y-%m-%dT%H:%M")
+
+        # 👉 convertir a datetime con zona Argentina
+        fecha_local = fecha_local.replace(tzinfo=tz_ar)
+
+        # 👉 convertir a UTC (como usa tu sistema)
+        fecha_utc = fecha_local.astimezone(timezone.utc)
+
+        asistencia.fecha_hora = fecha_utc
 
         db.session.commit()
         flash("Asistencia actualizada", "success")
