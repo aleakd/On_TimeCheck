@@ -361,8 +361,14 @@ def reporte_diario():
     for a in asistencias:
         fecha_local = a.fecha_hora.astimezone(tz_ar).date()
 
-        if fecha_local == hoy:
-            registros_por_empleado[a.empleado].append(a)
+        if fecha_local != hoy:
+            continue
+
+        # 🔥 asegurar sucursal correcta (doble validación)
+        if sucursal_id and a.sucursal_id != sucursal_id:
+            continue
+
+        registros_por_empleado[a.empleado].append(a)
 
     resumen = []
 
