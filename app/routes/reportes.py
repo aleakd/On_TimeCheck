@@ -156,7 +156,24 @@ def reporte_mensual():
 
     inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
 
-    asistencias = obtener_asistencias_mes(None, inicio_utc, fin_utc)
+    empleados = empleados_empresa()
+
+    if sucursal_id:
+        empleados = empleados.filter_by(sucursal_id=sucursal_id)
+
+    empleados = empleados.all()
+    empleados_ids = [e.id for e in empleados]
+
+    asistencias = (
+        asistencias_empresa()
+        .filter(
+            Asistencia.fecha_hora >= inicio_utc - timedelta(hours=12),
+            Asistencia.fecha_hora < fin_utc + timedelta(hours=12),
+            Asistencia.empleado_id.in_(empleados_ids)
+        )
+        .order_by(Asistencia.fecha_hora)
+        .all()
+    )
 
     registros_por_empleado = defaultdict(list)
 
