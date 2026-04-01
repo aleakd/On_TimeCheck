@@ -23,7 +23,7 @@ reportes_bp = Blueprint('reportes', __name__, url_prefix='/reportes')
 @reportes_bp.route('/')
 @login_required
 @admin_o_supervisor
-def index_reportes():
+def index():
 
     return render_template("reportes_index.html")
 # =========================================================
