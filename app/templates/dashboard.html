@@ -2,214 +2,157 @@
 {% block content %}
 
 <!-- ===============================
-     CABECERA INTELIGENTE
+     HERO + KPIs (PRIMER IMPACTO)
 ================================ -->
-<div class="dashboard-hero mb-5">
+<div class="card mb-4">
 
-    <div>
-        <h2 class="mb-1">Panel de control</h2>
-
-        {% if current_user.rol == 'admin' %}
-            <p class="text-muted">Resumen general de la empresa hoy</p>
-        {% elif current_user.rol == 'supervisor' %}
-            <p class="text-muted">Actividad del equipo en tiempo real</p>
-        {% else %}
-            <p class="text-muted">Resumen de tu jornada laboral</p>
-        {% endif %}
-    </div>
-
-    <div class="today-pill">
-        📅 {{ fecha_hoy }}
-    </div>
-
-</div>
-<!-- ===============================
-     QUIENES ESTÁN TRABAJANDO
-================================ -->
-{% if current_user.rol in ['admin','supervisor'] and empleados_trabajando %}
-
-<div class="card shadow-sm p-4 mb-5" style="background-color:#CCFFD4">
-
-<h4 class="mb-3">👷 Trabajando ahora</h4>
-
-<div class="row">
-
-{% for emp in empleados_trabajando %}
-
-<div class="col-md-3 mb-2">
-
-<div class="p-3 border rounded bg-light">
-
-<strong>{{ emp.nombre }}</strong>
-
-<br>
-
-<small class="text-muted">
-Desde {{ emp.hora }}
-</small>
-
-</div>
-
-</div>
-
-{% endfor %}
-
-</div>
-
-</div>
-
-{% endif %}
-
-<!-- ===============================
-     MÉTRICAS PRINCIPALES
-================================ -->
-<div class="stats-grid mb-5">
-
-    {% if current_user.rol != 'empleado' %}
-    <div class="stat-card">
-        <div class="stat-number">{{ total_empleados }}</div>
-        <div class="stat-label">Empleados activos</div>
-    </div>
-    {% endif %}
-
-    <div class="stat-card">
-        <div class="stat-number">{{ asistencias_hoy }}</div>
-        <div class="stat-label">Fichajes hoy</div>
-    </div>
-
-    {% if current_user.rol != 'empleado' %}
-    <div class="stat-card">
-        <div class="stat-number">{{ trabajando }}</div>
-        <div class="stat-label">Trabajando ahora</div>
-    </div>
-    {% endif %}
-
-    <div class="stat-card">
-        <div class="stat-number">{{ horas_mes }}</div>
-        <div class="stat-label">Horas acumuladas</div>
-    </div>
-
-</div>
-
-
-<!-- ===============================
-     ACCESOS RÁPIDOS SEGÚN ROL
-================================ -->
-<h4 class="mb-3">Acciones rápidas</h4>
-<div class="row quick-actions">
-    {% if current_user.rol in ['empleado'] %}
-    <div class="col-md-3 mb-3">
-        <a href="/fichaje" class="btn btn-primary w-100 p-4">
-            🕒 Registrar asistencia
-        </a>
-    </div>
-    {% endif %}
-
-    {% if current_user.rol in ['admin', 'supervisor'] %}
-    <div class="col-md-3 mb-3">
-        <a href="/asistencias" class="btn btn-primary w-100 p-4">
-            🕒 Registrar asistencia
-        </a>
-    </div>
-    {% endif %}
-
-    {% if current_user.rol in ['admin','supervisor'] %}
-    <div class="col-md-3 mb-3">
-        <a href="/reportes/diario" class="btn btn-success w-100 p-4">
-            📅 Reporte diario
-        </a>
-    </div>
-
-    <div class="col-md-3 mb-3">
-        <a href="/reportes/mensual" class="btn btn-success w-100 p-4">
-            📊 Reporte mensual
-        </a>
-    </div>
-    {% endif %}
-
-    {% if current_user.rol == 'admin' %}
-    <div class="col-md-3 mb-3">
-        <a href="/empleados" class="btn btn-dark w-100 p-4">
-            👥 Empleados
-        </a>
-    </div>
-
-    <div class="col-md-3 mb-3">
-        <a href="/usuarios" class="btn btn-dark w-100 p-4">
-            🔐 Usuarios
-        </a>
-    </div>
-
-    <div class="col-md-3 mb-3">
-        <a href="/empresa/configuracion" class="btn btn-secondary w-100 p-4">
-            🏢 Empresa
-        </a>
-    </div>
-
-    <div class="col-md-3 mb-3">
-        <a href="/auditoria" class="btn btn-danger w-100 p-4">
-            📜 Auditoría
-        </a>
-    </div>
-    {% endif %}
-
-</div>
-
-
-<!-- ===============================
-     ESTADO ACTUAL DEL PERSONAL
-================================ -->
-<div class="card staff-status-card mb-5">
-
-    <!-- Header -->
-    <div class="staff-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
         <div>
-            <h4 class="mb-1">Estado actual del personal</h4>
-            <small class="text-muted">Último registro del día</small>
+            <h2 class="mb-1">Control operativo</h2>
+            <small class="text-muted">
+                Estado en tiempo real de la empresa
+            </small>
         </div>
 
-        <div class="staff-summary">
-            <span class="badge badge-in">
-                🟢 {{ empleados_estado|selectattr("estado","equalto","ingreso")|list|length }}
-            </span>
-
-            <span class="badge badge-missing">
-                🔴 {{ empleados_estado|selectattr("estado","equalto","sin_registro")|list|length }}
-            </span>
-
-            <span class="badge badge-out">
-                ⚪ {{ empleados_estado|selectattr("estado","equalto","salida")|list|length }}
-            </span>
+        <div class="today-pill">
+            📅 {{ fecha_hoy }}
         </div>
     </div>
 
-    <!-- Lista -->
-    <div class="staff-list-scroll">
+    <div class="row text-center">
 
-        {% for emp in empleados_estado %}
-        <div class="staff-row">
+        <div class="col-md-3">
+            <div class="p-3">
+                <div class="stat-number" style="color:var(--success)">
+                    {{ empleados_trabajando|length }}
+                </div>
+                <div class="stat-label">En planta</div>
+            </div>
+        </div>
 
-            <div class="staff-left">
-                <div class="status-dot
-                    {% if emp.estado == 'ingreso' %}dot-in
-                    {% elif emp.estado == 'salida' %}dot-out
-                    {% else %}dot-missing{% endif %}">
+        <div class="col-md-3">
+            <div class="p-3">
+                <div class="stat-number" style="color:var(--danger)">
+                    {{ pendientes|length }}
+                </div>
+                <div class="stat-label">Pendientes</div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="p-3">
+                <div class="stat-number" style="color:var(--warning)">
+                    {{ alertas_tarde|length }}
+                </div>
+                <div class="stat-label">Tarde</div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="p-3">
+                <div class="stat-number">
+                    {{ asistencias_hoy }}
+                </div>
+                <div class="stat-label">Fichajes</div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ===============================
+     ZONA CRÍTICA (2 COLUMNAS)
+================================ -->
+<div class="row mb-4">
+
+    <!-- ⛔ PENDIENTES -->
+    <div class="col-md-6">
+        <div class="card h-100" style="border-left:6px solid var(--danger);">
+
+            <h4 class="mb-3">⛔ Pendientes</h4>
+
+            {% if pendientes %}
+                {% for emp in pendientes %}
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+
+                    <div>
+                        <strong>{{ emp.nombre }}</strong><br>
+                        <small class="text-muted">
+                            Turno {{ emp.hora }}
+                        </small>
+                    </div>
+
+                    <span class="badge badge-missing">SIN INGRESO</span>
+
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">Sin pendientes</p>
+            {% endif %}
+
+        </div>
+    </div>
+
+
+    <!-- ⚠ TARDANZA -->
+    <div class="col-md-6">
+        <div class="card h-100" style="border-left:6px solid var(--warning);">
+
+            <h4 class="mb-3">⚠ Llegadas tarde</h4>
+
+            {% if alertas_tarde %}
+                {% for alerta in alertas_tarde %}
+                <div class="mb-2 p-2 border rounded">
+
+                    <div>{{ alerta.descripcion }}</div>
+
+                    <small class="text-muted">
+                        {{ (alerta.created_at | hora_ar).strftime('%H:%M') }}
+                    </small>
+
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">Sin tardanzas</p>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+
+<!-- ===============================
+     👷 QUIÉN ESTÁ TRABAJANDO (GRID VISUAL)
+================================ -->
+<div class="card mb-4" style="border-left:6px solid var(--success);">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">👷 En planta</h4>
+        <small class="text-muted">{{ empleados_trabajando|length }} activos</small>
+    </div>
+
+    <div class="row">
+
+        {% for emp in empleados_trabajando %}
+        <div class="col-md-3 mb-3">
+
+            <div class="p-3 border rounded text-center" style="background:#f8fafc">
+
+                <div style="font-size:14px; color:var(--text-muted)">
+                    {{ emp.hora }}
                 </div>
 
-                <div>
-                    <div class="staff-name">
-                        {{ emp.nombre }}
-                    </div>
-                    <div class="staff-time text-muted">
-                        {% if emp.estado == 'ingreso' %}
-                            En planta desde {{ emp.hora }}
-                        {% elif emp.estado == 'salida' %}
-                            Salida a las {{ emp.hora }}
-                        {% else %}
-                            Sin registro hoy
-                        {% endif %}
-                    </div>
+                <div style="font-weight:600;">
+                    {{ emp.nombre }}
                 </div>
+
+                <div class="mt-1">
+                    <span class="badge badge-in">ACTIVO</span>
+                </div>
+
             </div>
 
         </div>
@@ -219,60 +162,114 @@ Desde {{ emp.hora }}
 
 </div>
 
+
 <!-- ===============================
-     LLEGADAS TARDES
+     📊 ESTADO GENERAL (LISTA PREMIUM)
 ================================ -->
-{% if current_user.rol in ['admin','supervisor'] and alertas_tarde %}
-<div class="card shadow-sm p-4 mb-5" style="background-color:#FFCCCC;">
+<div class="card staff-status-card mb-4">
 
-<h4 class="mb-3" style="color:red;">⚠ Llegadas tarde hoy</h4>
+    <div class="staff-header">
 
-<table class="table table-sm table-striped">
+        <div>
+            <h4 class="mb-1">Estado general</h4>
+            <small class="text-muted">Visión completa del día</small>
+        </div>
 
-<thead>
-<tr>
-<th>Detalle</th>
-<th>Hora</th>
-</tr>
-</thead>
+        <div class="staff-summary">
+            <span class="badge badge-in">
+                🟢 {{ empleados_estado|selectattr("estado","equalto","ingreso")|list|length }}
+            </span>
+            <span class="badge badge-missing">
+                🔴 {{ empleados_estado|selectattr("estado","equalto","sin_registro")|list|length }}
+            </span>
+            <span class="badge badge-out">
+                ⚪ {{ empleados_estado|selectattr("estado","equalto","salida")|list|length }}
+            </span>
+        </div>
 
-<tbody>
+    </div>
 
-{% for alerta in alertas_tarde %}
+    <div class="staff-list-scroll">
 
-<tr>
+        {% for emp in empleados_estado %}
+        <div class="staff-row">
 
-<td>{{ alerta.descripcion }}</td>
+            <div class="staff-left">
 
-<td>
-{{ (alerta.created_at | hora_ar).strftime('%H:%M') }}
-</td>
+                <div class="status-dot
+                    {% if emp.estado == 'ingreso' %}dot-in
+                    {% elif emp.estado == 'salida' %}dot-out
+                    {% else %}dot-missing{% endif %}">
+                </div>
 
-</tr>
+                <div>
+                    <div class="staff-name">{{ emp.nombre }}</div>
 
-{% endfor %}
+                    <div class="staff-time text-muted">
 
-</tbody>
+                        {% if emp.estado == 'ingreso' %}
+                            En planta desde {{ emp.hora }}
 
-</table>
+                        {% elif emp.estado == 'salida' %}
+                            Salió a las {{ emp.hora }}
+
+                        {% else %}
+                            No registró hoy
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+        {% endfor %}
+
+    </div>
 
 </div>
-{% endif %}
+
 
 <!-- ===============================
-     GRÁFICO TENDENCIA
+     📈 MÉTRICAS + GRÁFICO
 ================================ -->
-<div class="card shadow-sm p-4 mb-5 chart-card">
-    <h4 class="mb-4">Horas trabajadas este mes</h4>
+<div class="row mb-5">
+
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_empleados }}</div>
+            <div class="stat-label">Empleados</div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-number">{{ trabajando }}</div>
+            <div class="stat-label">Activos ahora</div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-number">{{ horas_mes }}</div>
+            <div class="stat-label">Horas del mes</div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="card chart-card mb-5">
+
+    <h4 class="mb-4">📊 Horas trabajadas</h4>
+
     <canvas id="horasChart"></canvas>
+
 </div>
 
 
-
-
-<!-- ===============================
-     SCRIPT GRÁFICO
-================================ -->
 <script>
 const ctx = document.getElementById('horasChart');
 
@@ -281,22 +278,10 @@ new Chart(ctx, {
     data: {
         labels: {{ chart_labels|tojson }},
         datasets: [{
-            label: 'Horas trabajadas',
+            label: 'Horas',
             data: {{ chart_data|tojson }},
             borderWidth: 1
         }]
-    },
-    options: {
-        responsive: true,
-        scales: {
-            y: {
-                beginAtZero: true,
-                title: {
-                    display: true,
-                    text: 'Horas'
-                }
-            }
-        }
     }
 });
 </script>

@@ -6,6 +6,7 @@ from sqlalchemy import func
 from zoneinfo import ZoneInfo
 from app.multitenant import empleados_empresa, asistencias_empresa
 from collections import defaultdict
+from app.services.horarios_service import obtener_turno_dia
 
 main_bp = Blueprint('main', __name__)
 
@@ -75,6 +76,64 @@ def dashboard():
     minutos = int((total_segundos % 3600) // 60)
 
     horas_mes = f"{horas:02d}:{minutos:02d}"
+
+    # ==========================================
+    # ⛔ EMPLEADOS PENDIENTES DE INGRESO
+    # ==========================================
+
+    pendientes = []
+
+    ahora_ar = datetime.now(tz_ar)
+
+    for emp in empleados:
+
+        turno = obtener_turno_dia(emp, ahora_ar)
+
+        # no trabaja hoy → ignorar
+        if not turno or turno["tipo"] != "TRABAJA":
+            continue
+
+        # sin horario → ignorar
+        if not turno["inicio"]:
+            continue
+
+        # hora de inicio del turno
+        turno_dt = datetime.combine(
+            ahora_ar.date(),
+            turno["inicio"],
+            tzinfo=tz_ar
+        )
+
+        tolerancia = emp.tolerancia_minutos or 0
+        limite = turno_dt + timedelta(minutes=tolerancia)
+
+        # todavía no debería haber llegado → ignorar
+        if ahora_ar <= limite:
+            continue
+
+        # buscar si ya fichó hoy
+        inicio_dia = ahora_ar.replace(hour=0, minute=0, second=0, microsecond=0)
+        fin_dia = inicio_dia + timedelta(days=1)
+
+        ingreso = (
+            asistencias_empresa()
+            .filter(
+                Asistencia.empleado_id == emp.id,
+                Asistencia.tipo == "INGRESO",
+                Asistencia.fecha_hora >= inicio_dia,
+                Asistencia.fecha_hora < fin_dia
+            )
+            .first()
+        )
+
+        # si ya ingresó → no es pendiente
+        if ingreso:
+            continue
+
+        pendientes.append({
+            "nombre": f"{emp.apellido} {emp.nombre}",
+            "hora": turno["inicio"].strftime("%H:%M")
+        })
 
     # ==========================================
     # 📈 HORAS POR DÍA (GRÁFICO)
@@ -226,5 +285,6 @@ def dashboard():
         fecha_hoy=hoy,
         empleados_estado=empleados_estado,
         empleados_trabajando=empleados_trabajando,
-        alertas_tarde=alertas_tarde
+        alertas_tarde=alertas_tarde,
+        pendientes=pendientes
     )
