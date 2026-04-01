@@ -280,3 +280,30 @@ def reporte_diario():
     )
 
     return render_template("reporte_diario.html", asistencias=asistencias, fecha=hoy)
+
+
+@reportes_bp.route('/mensual/<int:empleado_id>/excel')
+@login_required
+@admin_o_supervisor
+def exportar_detalle_empleado_excel_route(empleado_id):
+
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
+
+    year = request.args.get('year', type=int)
+    month = request.args.get('month', type=int)
+
+    empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
+
+    inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
+
+    registros = obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc)
+
+    detalle = procesar_bloques(registros, tz_ar, month)
+
+    file = exportar_detalle_empleado_excel(
+        empleado,
+        f"{MESES_ES[month]} {year}",
+        detalle
+    )
+
+    return send_file(file, as_attachment=True)
