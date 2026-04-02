@@ -42,7 +42,6 @@ def obtener_rango_mes(year, month, tz_ar):
 
     return inicio_utc, fin_utc
 
-
 def obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc):
     buffer_inicio = inicio_utc - timedelta(hours=12)
     buffer_fin = fin_utc + timedelta(hours=12)
@@ -57,7 +56,6 @@ def obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc):
         .order_by(Asistencia.fecha_hora)
         .all()
     )
-
 
 def procesar_bloques(registros, tz_ar, month):
 
@@ -309,7 +307,12 @@ def exportar_mensual_excel():
         resumen
     )
 
-    return send_file(file, as_attachment=True)
+    return send_file(
+        file,
+        as_attachment=True,
+        download_name=f"reporte_mensual_{month}_{year}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 
 @reportes_bp.route('/mensual/<int:empleado_id>/excel')
@@ -328,15 +331,29 @@ def exportar_detalle_empleado_excel_route(empleado_id):
 
     registros = obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc)
 
-    detalle = procesar_bloques(registros, tz_ar, month)
+    detalle_base = procesar_bloques(registros, tz_ar, month)
+
+    detalle = []
+    contador = 1
+
+    for d in detalle_base:
+        d["bloque"] = contador
+        detalle.append(d)
+        contador += 1
 
     file = exportar_detalle_empleado_excel(
-        empleado,
+        current_user.empresa.nombre,
+        f"{empleado.apellido}, {empleado.nombre}",
         f"{MESES_ES[month]} {year}",
         detalle
     )
 
-    return send_file(file, as_attachment=True)
+    return send_file(
+        file,
+        as_attachment=True,
+        download_name=f"detalle_{empleado_id}_{month}_{year}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 
 # =========================================================

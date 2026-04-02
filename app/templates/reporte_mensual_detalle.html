@@ -45,7 +45,8 @@
     </tbody>
 </table>
 
-<a href="{{ url_for('reportes.exportar_mensual_excel',
+<a href="{{ url_for('reportes.exportar_detalle_empleado_excel_route',
+                    empleado_id=empleado.id,
                     year=year,
                     month=month) }}"
    class="btn btn-success mb-3">
