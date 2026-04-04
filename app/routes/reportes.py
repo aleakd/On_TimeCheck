@@ -26,6 +26,11 @@ reportes_bp = Blueprint('reportes', __name__, url_prefix='/reportes')
 def index():
 
     return render_template("reportes_index.html")
+
+
+
+
+
 # =========================================================
 # 🧠 HELPERS (CLAVE PARA TODO)
 # =========================================================
@@ -98,7 +103,7 @@ def procesar_bloques(registros, tz_ar, month):
         mes_salida = b["salida"].month if b["salida"] else None
 
         # ✔ incluir si el bloque pertenece al mes
-        if mes_ingreso == month or mes_salida == month:
+        if month is None or mes_ingreso == month or mes_salida == month:
             bloques_mes.append(b)
 
     # 🔥 calcular resultado final
@@ -143,8 +148,24 @@ def reporte_mensual():
     tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
 
     hoy = datetime.now(tz_ar)
-    year = request.args.get('year', hoy.year, type=int)
-    month = request.args.get('month', hoy.month, type=int)
+    fecha_desde = request.args.get("desde")
+    fecha_hasta = request.args.get("hasta")
+
+    if fecha_desde and fecha_hasta:
+        desde = datetime.strptime(fecha_desde, "%Y-%m-%d").replace(tzinfo=tz_ar)
+        hasta = datetime.strptime(fecha_hasta, "%Y-%m-%d").replace(tzinfo=tz_ar) + timedelta(days=1)
+
+        inicio_utc = desde.astimezone(timezone.utc)
+        fin_utc = hasta.astimezone(timezone.utc)
+
+        nombre_mes = f"{desde.strftime('%d/%m')} - {hasta.strftime('%d/%m')}"
+
+    else:
+        year = request.args.get('year', hoy.year, type=int)
+        month = request.args.get('month', hoy.month, type=int)
+
+        inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
+        nombre_mes = f"{MESES_ES[month]} {year}"
 
     sucursal_id = request.args.get('sucursal_id', type=int)
 
@@ -152,7 +173,6 @@ def reporte_mensual():
         empresa_id=current_user.empresa_id
     ).all()
 
-    inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
 
     empleados = empleados_empresa()
 
@@ -182,7 +202,7 @@ def reporte_mensual():
 
     for empleado, registros in registros_por_empleado.items():
 
-        bloques = procesar_bloques(registros, tz_ar, month)
+        bloques = procesar_bloques(registros, tz_ar, None)
 
         total_segundos = sum(
             (b["salida"] - b["ingreso"]).total_seconds()
@@ -211,9 +231,9 @@ def reporte_mensual():
     return render_template(
         "reporte_mensual.html",
         resumen=resumen,
-        year=year,
-        month=month,
-        nombre_mes=f"{MESES_ES[month]} {year}",
+        year=year if not (fecha_desde and fecha_hasta) else None,
+        month=month if not (fecha_desde and fecha_hasta) else None,
+        nombre_mes=nombre_mes,
         sucursales=sucursales,
         sucursal_id=sucursal_id
     )
