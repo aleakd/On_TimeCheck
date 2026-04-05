@@ -196,11 +196,12 @@ def reporte_mensual():
     registros_por_empleado = defaultdict(list)
 
     for a in asistencias:
-        registros_por_empleado[a.empleado].append(a)
-
+        registros_por_empleado[a.empleado_id].append(a)
     resumen = []
 
-    for empleado, registros in registros_por_empleado.items():
+    for empleado_id, registros in registros_por_empleado.items():
+
+        empleado = registros[0].empleado
 
         bloques = procesar_bloques(registros, tz_ar, None)
 
@@ -281,30 +282,71 @@ def exportar_mensual_excel():
     tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
 
     hoy = datetime.now(tz_ar)
-    year = request.args.get('year', hoy.year, type=int)
-    month = request.args.get('month', hoy.month, type=int)
 
-    inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
+    fecha_desde = request.args.get("desde")
+    fecha_hasta = request.args.get("hasta")
 
+    if fecha_desde and fecha_hasta:
+        desde = datetime.strptime(fecha_desde, "%Y-%m-%d").replace(tzinfo=tz_ar)
+        hasta = datetime.strptime(fecha_hasta, "%Y-%m-%d").replace(tzinfo=tz_ar) + timedelta(days=1)
+
+        inicio_utc = desde.astimezone(timezone.utc)
+        fin_utc = hasta.astimezone(timezone.utc)
+
+        nombre = f"{desde.strftime('%d-%m')}__{hasta.strftime('%d-%m')}"
+
+    else:
+        year = request.args.get('year', hoy.year, type=int)
+        month = request.args.get('month', hoy.month, type=int)
+
+        inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
+        nombre = f"{month}_{year}"
+
+    # 🔥 TRAER DATOS
+    sucursal_id = request.args.get("sucursal_id", type=int)
     asistencias = obtener_asistencias_mes(None, inicio_utc, fin_utc)
+    if sucursal_id:
+        asistencias = [
+            a for a in asistencias
+            if a.sucursal_id == sucursal_id
+        ]
 
+    # 🔥 AGRUPAR BIEN (FIX REAL)
     registros_por_empleado = defaultdict(list)
 
     for a in asistencias:
-        registros_por_empleado[a.empleado].append(a)
+        registros_por_empleado[a.empleado_id].append(a)
 
     resumen = []
 
-    for empleado, registros in registros_por_empleado.items():
+    for empleado_id, registros in registros_por_empleado.items():
 
-        bloques = procesar_bloques(registros, tz_ar, month)
+        empleado = registros[0].empleado
+
+        bloques_raw = procesar_bloques(registros, tz_ar, None)
+
+        bloques = []
+
+        for b in bloques_raw:
+
+            fecha_ingreso = b["ingreso"].astimezone(tz_ar).date()
+            fecha_salida = b["salida"].astimezone(tz_ar).date() if b["salida"] else None
+
+            if fecha_desde and fecha_hasta:
+                if not (
+                    (desde.date() <= fecha_ingreso <= hasta.date()) or
+                    (fecha_salida and desde.date() <= fecha_salida <= hasta.date())
+                ):
+                    continue
+
+            bloques.append(b)
 
         total_segundos = sum(
             (b["salida"] - b["ingreso"]).total_seconds()
             for b in bloques if b["salida"]
         )
 
-        if total_segundos > 0:
+        if bloques:
             horas = int(total_segundos // 3600)
             minutos = int((total_segundos % 3600) // 60)
 
@@ -323,14 +365,14 @@ def exportar_mensual_excel():
 
     file = exportar_reporte_mensual_excel(
         current_user.empresa.nombre,
-        f"{MESES_ES[month]} {year}",
+        nombre,
         resumen
     )
 
     return send_file(
         file,
         as_attachment=True,
-        download_name=f"reporte_mensual_{month}_{year}.xlsx",
+        download_name=f"reporte_{nombre}.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
