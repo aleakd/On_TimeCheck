@@ -62,7 +62,7 @@ def obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc):
         .all()
     )
 
-def procesar_bloques(registros, tz_ar, month):
+def procesar_bloques(registros, tz_ar, desde=None, hasta=None):
 
     bloques = []
     ingreso = None
@@ -99,43 +99,54 @@ def procesar_bloques(registros, tz_ar, month):
 
     for b in bloques:
 
-        mes_ingreso = b["ingreso"].month
-        mes_salida = b["salida"].month if b["salida"] else None
+        if desde and hasta:
+            fecha_ingreso = b["ingreso"].date()
+            fecha_salida = b["salida"].date() if b["salida"] else None
 
-        # ✔ incluir si el bloque pertenece al mes
-        if month is None or mes_ingreso == month or mes_salida == month:
-            bloques_mes.append(b)
+            if not (
+                    (desde.date() <= fecha_ingreso < hasta.date()) or
+                    (fecha_salida and desde.date() <= fecha_salida < hasta.date())
+            ):
+                continue
+
+        bloques_mes.append(b)
 
     # 🔥 calcular resultado final
     resultado = []
 
     for b in bloques_mes:
 
-        if b["salida"]:
-            segundos = (b["salida"] - b["ingreso"]).total_seconds()
+        ingreso = b["ingreso"]
+        salida = b["salida"]
+
+        # 🔥 recorte por rango
+        if desde and hasta:
+            if ingreso < desde:
+                ingreso = desde
+            if salida and salida > hasta:
+                salida = hasta
+
+        if salida:
+            segundos = (salida - ingreso).total_seconds()
             h = int(segundos // 3600)
             m = int((segundos % 3600) // 60)
 
             estado = "OK"
             horas = f"{h:02d}:{m:02d}"
-
         else:
             estado = "INCOMPLETO"
             horas = "00:00"
 
         resultado.append({
-            "fecha": b["fecha"],
-            "ingreso": b["ingreso"],
-            "salida": b["salida"],
+            "fecha": ingreso.date(),
+            "ingreso": ingreso,
+            "salida": salida,
             "horas": horas,
             "estado": estado,
             "actividad": b["actividad"]
         })
 
     return resultado
-
-
-
 
 # =========================================================
 # REPORTE MENSUAL
@@ -146,26 +157,29 @@ def procesar_bloques(registros, tz_ar, month):
 def reporte_mensual():
 
     tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
-
-    hoy = datetime.now(tz_ar)
     fecha_desde = request.args.get("desde")
     fecha_hasta = request.args.get("hasta")
+    hoy = datetime.now(tz_ar)
 
-    if fecha_desde and fecha_hasta:
+    # 👉 si no vienen fechas, usar mes actual
+    if not fecha_desde or not fecha_hasta:
+        desde = datetime(hoy.year, hoy.month, 1, tzinfo=tz_ar)
+
+        if hoy.month == 12:
+            hasta = datetime(hoy.year + 1, 1, 1, tzinfo=tz_ar)
+        else:
+            hasta = datetime(hoy.year, hoy.month + 1, 1, tzinfo=tz_ar)
+
+    else:
         desde = datetime.strptime(fecha_desde, "%Y-%m-%d").replace(tzinfo=tz_ar)
         hasta = datetime.strptime(fecha_hasta, "%Y-%m-%d").replace(tzinfo=tz_ar) + timedelta(days=1)
 
-        inicio_utc = desde.astimezone(timezone.utc)
-        fin_utc = hasta.astimezone(timezone.utc)
 
-        nombre_mes = f"{desde.strftime('%d/%m')} - {hasta.strftime('%d/%m')}"
 
-    else:
-        year = request.args.get('year', hoy.year, type=int)
-        month = request.args.get('month', hoy.month, type=int)
+    inicio_utc = desde.astimezone(timezone.utc)
+    fin_utc = hasta.astimezone(timezone.utc)
 
-        inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
-        nombre_mes = f"{MESES_ES[month]} {year}"
+    nombre_mes = f"{desde.strftime('%d/%m')} - {hasta.strftime('%d/%m')}"
 
     sucursal_id = request.args.get('sucursal_id', type=int)
 
@@ -203,8 +217,19 @@ def reporte_mensual():
 
         empleado = registros[0].empleado
 
-        bloques = procesar_bloques(registros, tz_ar, None)
+        bloques_raw = procesar_bloques(registros, tz_ar, None)
 
+        bloques = []
+
+        for b in bloques_raw:
+            fecha_ingreso = b["ingreso"].date()
+            fecha_salida = b["salida"].date() if b["salida"] else None
+
+            if (
+                    (desde.date() <= fecha_ingreso < hasta.date()) or
+                    (fecha_salida and desde.date() <= fecha_salida < hasta.date())
+            ):
+                bloques.append(b)
         total_segundos = sum(
             (b["salida"] - b["ingreso"]).total_seconds()
             for b in bloques if b["salida"]
@@ -232,8 +257,8 @@ def reporte_mensual():
     return render_template(
         "reporte_mensual.html",
         resumen=resumen,
-        year=year if not (fecha_desde and fecha_hasta) else None,
-        month=month if not (fecha_desde and fecha_hasta) else None,
+        year=None,
+        month=None,
         nombre_mes=nombre_mes,
         sucursales=sucursales,
         sucursal_id=sucursal_id
@@ -249,25 +274,42 @@ def reporte_mensual():
 def detalle_mensual_empleado(empleado_id):
 
     tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
-
-    year = request.args.get('year', type=int)
-    month = request.args.get('month', type=int)
-
     empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
+    fecha_desde = request.args.get("desde")
+    fecha_hasta = request.args.get("hasta")
 
-    inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
+    if not fecha_desde or not fecha_hasta:
+        return "Debe seleccionar desde y hasta", 400
+
+    desde = datetime.strptime(fecha_desde, "%Y-%m-%d").replace(tzinfo=tz_ar)
+    hasta = datetime.strptime(fecha_hasta, "%Y-%m-%d").replace(tzinfo=tz_ar) + timedelta(days=1)
+
+    inicio_utc = desde.astimezone(timezone.utc)
+    fin_utc = hasta.astimezone(timezone.utc)
 
     registros = obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc)
 
-    detalle = procesar_bloques(registros, tz_ar, month)
+    detalle_raw = procesar_bloques(registros, tz_ar, None)
+
+    detalle = []
+
+    for d in detalle_raw:
+        fecha_ingreso = d["ingreso"].date()
+        fecha_salida = d["salida"].date() if d["salida"] else None
+
+        if (
+                (desde.date() <= fecha_ingreso < hasta.date()) or
+                (fecha_salida and desde.date() <= fecha_salida < hasta.date())
+        ):
+            detalle.append(d)
 
     return render_template(
         "reporte_mensual_detalle.html",
         empleado=empleado,
         detalle=detalle,
-        nombre_mes=f"{MESES_ES[month]} {year}",
-        year=year,
-        month=month
+        nombre_mes=f"{desde.strftime('%d/%m')} - {hasta.strftime('%d/%m')}",
+        year=None,
+        month=None
     )
 
 
@@ -383,17 +425,23 @@ def exportar_mensual_excel():
 def exportar_detalle_empleado_excel_route(empleado_id):
 
     tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
-
-    year = request.args.get('year', type=int)
-    month = request.args.get('month', type=int)
-
     empleado = empleados_empresa().filter_by(id=empleado_id).first_or_404()
 
-    inicio_utc, fin_utc = obtener_rango_mes(year, month, tz_ar)
+    fecha_desde = request.args.get("desde")
+    fecha_hasta = request.args.get("hasta")
+
+    if not fecha_desde or not fecha_hasta:
+        return "Debe seleccionar desde y hasta", 400
+
+    desde = datetime.strptime(fecha_desde, "%Y-%m-%d").replace(tzinfo=tz_ar)
+    hasta = datetime.strptime(fecha_hasta, "%Y-%m-%d").replace(tzinfo=tz_ar) + timedelta(days=1)
+
+    inicio_utc = desde.astimezone(timezone.utc)
+    fin_utc = hasta.astimezone(timezone.utc)
 
     registros = obtener_asistencias_mes(empleado_id, inicio_utc, fin_utc)
 
-    detalle_base = procesar_bloques(registros, tz_ar, month)
+    detalle_base = procesar_bloques(registros, tz_ar, desde, hasta)
 
     detalle = []
     contador = 1
@@ -406,14 +454,14 @@ def exportar_detalle_empleado_excel_route(empleado_id):
     file = exportar_detalle_empleado_excel(
         current_user.empresa.nombre,
         f"{empleado.apellido}, {empleado.nombre}",
-        f"{MESES_ES[month]} {year}",
+        f"{desde.strftime('%d/%m')} - {hasta.strftime('%d/%m')}",
         detalle
     )
 
     return send_file(
         file,
         as_attachment=True,
-        download_name=f"detalle_{empleado_id}_{month}_{year}.xlsx",
+        download_name=f"detalle_{empleado_id}_{desde.strftime('%d%m')}_{hasta.strftime('%d%m')}.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 

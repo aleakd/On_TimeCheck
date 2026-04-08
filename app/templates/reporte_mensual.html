@@ -3,7 +3,20 @@
 {% block content %}
 <h3>📅 Reporte mensual – {{ nombre_mes }}</h3>
 <form method="GET" class="mb-3">
-    <div class="row">
+    <div class="row align-items-end">
+
+        <div class="col-md-3">
+    <label class="form-label">Sucursal</label>
+    <select name="sucursal_id" class="form-select">
+        <option value="">Todas las sucursales</option>
+        {% for s in sucursales %}
+            <option value="{{ s.id }}"
+                {% if request.args.get('sucursal_id')|int == s.id %}selected{% endif %}>
+                {{ s.nombre }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
 
         <div class="col-md-3">
             <input type="date" name="desde" class="form-control"
@@ -15,63 +28,7 @@
                    value="{{ request.args.get('hasta','') }}">
         </div>
 
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-dark w-100">
-                Aplicar rango
-            </button>
-        </div>
-
-    </div>
-</form>
-
-<form method="GET" class="mb-3">
-    <div class="row align-items-end">
-
-        <!-- SUCURSAL -->
         <div class="col-md-3">
-            <label class="form-label">Sucursal</label>
-            <select name="sucursal_id" class="form-select">
-                <option value="">Todas las sucursales</option>
-                {% for s in sucursales %}
-                    <option value="{{ s.id }}"
-                        {% if sucursal_id == s.id %}selected{% endif %}>
-                        {{ s.nombre }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- MES -->
-        <div class="col-md-3">
-            <label class="form-label">Mes</label>
-            <select name="month" class="form-select">
-                {% for m in range(1,13) %}
-                <option value="{{ m }}"
-                    {% if m == month %}selected{% endif %}>
-                    {{ [
-                        '', 'Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
-                    ][m] }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- AÑO -->
-        <div class="col-md-2">
-            <label class="form-label">Año</label>
-            <select name="year" class="form-select">
-                {% for y in range(2024, 2031) %}
-                <option value="{{ y }}"
-                    {% if y == year %}selected{% endif %}>
-                    {{ y }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- BOTÓN -->
-        <div class="col-md-2">
             <button type="submit" class="btn btn-primary w-100">
                 Filtrar
             </button>
@@ -107,8 +64,8 @@
             <td class="text-center">
                 <a href="{{ url_for('reportes.detalle_mensual_empleado',
                     empleado_id=r.empleado.id,
-                    year=year,
-                    month=month) }}"
+                    desde=request.args.get('desde'),
+                    hasta=request.args.get('hasta')) }}"
                    class="btn btn-sm btn-outline-primary">
                     🔍
                 </a>
@@ -125,13 +82,10 @@
 </table>
 
 <a href="{{ url_for('reportes.exportar_mensual_excel',
-                           year=year,
-                           month=month,
-                           desde=request.args.get('desde'),
-                           hasta=request.args.get('hasta'),
-                           sucursal_id=request.args.get('sucursal_id')
-
-                           ) }}"
+                       desde=request.args.get('desde'),
+                       hasta=request.args.get('hasta'),
+                       sucursal_id=request.args.get('sucursal_id')
+                       ) }}"
 class="btn btn-success mb-3">
    ⬇ Descargar Excel
 </a>
