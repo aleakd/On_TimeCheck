@@ -94,8 +94,8 @@ def marcar_asistencia():
             return redirect(url_for('asistencias.marcar_asistencia'))
 
         if tipo == 'INGRESO' and not actividad:
-            flash('⚠️ Debe seleccionar una actividad para el INGRESO', 'warning')
-            return redirect(url_for('asistencias.marcar_asistencia'))
+            actividad = "manual"
+
 
         # =========================
         # 🔁 CONTROL DE SECUENCIA

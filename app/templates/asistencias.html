@@ -141,7 +141,7 @@ const actividadSelect = document.getElementById('actividad');
 tipoSelect.addEventListener('change', function () {
     if (this.value === 'INGRESO') {
         actividadBox.style.display = 'block';
-        actividadSelect.setAttribute('required', 'required');
+
     } else {
         actividadBox.style.display = 'none';
         actividadSelect.removeAttribute('required');
