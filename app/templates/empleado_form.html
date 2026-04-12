@@ -87,6 +87,40 @@
                value="{{ empleado.tolerancia_minutos if empleado else 15 }}">
     </div>
 
+    <hr>
+
+<div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" id="crear_usuario_check" {% if usuario %}checked{% endif %}>
+    <label class="form-check-label">
+        Crear usuario para este empleado
+    </label>
+</div>
+
+<div id="usuario-box" style="{% if usuario %}display:block;{% else %}display:none;{% endif %}">
+
+    <div class="mb-3">
+        <label class="form-label">Email de acceso</label>
+        <input type="email"
+       name="usuario_email"
+       class="form-control"
+       value="{{ usuario.email if usuario else '' }}">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Contraseña</label>
+        <input type="password" name="usuario_password" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Rol</label>
+        <select name="usuario_rol" class="form-select">
+            <option value="empleado">Empleado</option>
+            <option value="supervisor">Supervisor</option>
+        </select>
+    </div>
+
+</div>
+
 </div>
 
         <div class="d-flex justify-content-between">
@@ -103,4 +137,19 @@
     </form>
 
 </div>
+
+
+
+
+
+<script>
+    const check = document.getElementById('crear_usuario_check');
+const box = document.getElementById('usuario-box');
+
+check.addEventListener('change', function() {
+    box.style.display = this.checked ? 'block' : 'none';
+});
+</script>
+
+
 {% endblock %}

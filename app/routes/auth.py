@@ -34,10 +34,15 @@ def login():
             session["superadmin"] = True
             return redirect(url_for("superadmin.panel"))
 
-        user = Usuario.query.filter_by(email=email, activo=True).first()
+        user = Usuario.query.filter_by(email=email).first()
 
         if not user or not check_password_hash(user.password_hash, password):
+            # 🚫 Bloquear si empleado está inactivo
             flash('Credenciales inválidas', 'danger')
+            return redirect(url_for('auth.login'))
+
+        if user.empleado and not user.empleado.activo:
+            flash("El usuario se encuentra desactivado", "danger")
             return redirect(url_for('auth.login'))
         # 🚫 Bloquear si empresa está desactivada
         if user.empresa and not user.empresa.activa:

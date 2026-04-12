@@ -28,19 +28,29 @@
 
     <!-- 👇 SELECT EMPLEADO (SOLO PARA ROL EMPLEADO) -->
     <div class="mb-3" id="empleado-box" style="display:none;">
-        <label class="form-label">Empleado vinculado</label>
-        <select name="empleado_id" class="form-select">
-            <option value="">Seleccione empleado</option>
-            {% for e in empleados %}
-                <option value="{{ e.id }}">
-                    {{ e.apellido }}, {{ e.nombre }}
-                </option>
-            {% endfor %}
-        </select>
-        <div class="form-text">
-            Solo obligatorio si el rol es EMPLEADO
-        </div>
+    <label class="form-label">Empleado vinculado</label>
+
+    <select name="empleado_id" class="form-select"
+        {% if request.args.get('empleado_id') %}disabled{% endif %}>
+
+        <option value="">Seleccione empleado</option>
+        {% for e in empleados %}
+            <option value="{{ e.id }}"
+                {% if request.args.get('empleado_id')|int == e.id %}selected{% endif %}>
+                {{ e.apellido }}, {{ e.nombre }}
+            </option>
+        {% endfor %}
+    </select>
+
+    {% if request.args.get('empleado_id') %}
+        <input type="hidden" name="empleado_id" value="{{ request.args.get('empleado_id') }}">
+    {% endif %}
+
+    <div class="form-text">
+        Obligatorio para todos los roles excepto ADMIN
     </div>
+</div>
+
 
     <button class="btn btn-primary w-100">
         Crear usuario
@@ -52,13 +62,25 @@
 const rolSelect = document.getElementById('rol');
 const empleadoBox = document.getElementById('empleado-box');
 
-rolSelect.addEventListener('change', function() {
-    if (this.value === 'empleado') {
+function toggleEmpleado() {
+    if (rolSelect.value !== 'admin') {
         empleadoBox.style.display = 'block';
     } else {
         empleadoBox.style.display = 'none';
     }
-});
+}
+
+// ejecutar al cargar
+toggleEmpleado();
+
+// cambiar dinámicamente
+rolSelect.addEventListener('change', toggleEmpleado);
+
+// 👇 si viene desde empleado (query param)
+if ({{ request.args.get('empleado_id') is not none | tojson }}) {
+    rolSelect.value = "empleado";
+    empleadoBox.style.display = "block";
+}
 </script>
 
 {% endblock %}

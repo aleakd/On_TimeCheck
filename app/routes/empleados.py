@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from app.models import Empleado, db, Sucursal
+from app.models import Empleado, db, Sucursal, Usuario
 from app.multitenant import empleados_empresa
 from app.roles import solo_admin, admin_o_supervisor
 from app.audit import registrar_evento
@@ -18,6 +18,21 @@ empleados_bp = Blueprint('empleados', __name__, url_prefix='/empleados')
 @admin_o_supervisor
 def lista_empleados():
     empleados = empleados_empresa().order_by(Empleado.apellido).all()
+
+    # 🔥 mapear empleados con usuario
+    usuarios = Usuario.query.filter_by(
+        empresa_id=current_user.empresa_id
+    ).all()
+
+    usuarios_por_empleado = {
+        u.empleado_id: u for u in usuarios if u.empleado_id
+    }
+
+    return render_template(
+        'empleados.html',
+        empleados=empleados,
+        usuarios_por_empleado=usuarios_por_empleado
+    )
     return render_template('empleados.html', empleados=empleados)
 
 
@@ -113,7 +128,7 @@ def editar_empleado(id):
 
     empleado = empleados_empresa().filter_by(id=id).first_or_404()
 
-    from app.models import Sucursal, Asistencia
+    from app.models import Sucursal, Asistencia, Usuario
 
     sucursales = Sucursal.query.filter_by(
         empresa_id=current_user.empresa_id,
@@ -138,7 +153,6 @@ def editar_empleado(id):
         if turno_fin:
             turno_fin = datetime.strptime(turno_fin, "%H:%M").time()
 
-
         # 🔒 Validar jornada abierta
         ultima = (
             Asistencia.query
@@ -151,7 +165,7 @@ def editar_empleado(id):
             flash("No se puede cambiar de sucursal con jornada abierta", "danger")
             return redirect(url_for('empleados.editar_empleado', id=id))
 
-        # Guardar cambios
+        # Guardar cambios del empleado
         empleado.dni = dni
         empleado.apellido = apellido
         empleado.nombre = nombre
@@ -162,6 +176,38 @@ def editar_empleado(id):
 
         db.session.commit()
 
+        # =========================
+        # CREAR USUARIO (OPCIONAL)
+        # =========================
+        usuario_email = request.form.get('usuario_email')
+        usuario_password = request.form.get('usuario_password')
+        usuario_rol = request.form.get('usuario_rol')
+
+        if usuario_email and usuario_password:
+
+            # 🔒 evitar duplicado
+            existe = Usuario.query.filter_by(
+                empleado_id=empleado.id,
+                empresa_id=current_user.empresa_id
+            ).first()
+
+            if not existe:
+
+                # 🔒 validar rol
+                if usuario_rol not in ['empleado', 'supervisor']:
+                    usuario_rol = 'empleado'
+
+                nuevo_usuario = Usuario(
+                    email=usuario_email,
+                    rol=usuario_rol,
+                    empleado_id=empleado.id,
+                    empresa_id=current_user.empresa_id
+                )
+                nuevo_usuario.set_password(usuario_password)
+
+                db.session.add(nuevo_usuario)
+                db.session.commit()
+
         registrar_evento(
             "EDITAR",
             "EMPLEADO",
@@ -171,11 +217,18 @@ def editar_empleado(id):
         flash("Empleado actualizado correctamente", "success")
         return redirect(url_for('empleados.lista_empleados'))
 
+    usuario = Usuario.query.filter_by(
+        empleado_id=empleado.id,
+        empresa_id=current_user.empresa_id
+    ).first()
+
     return render_template(
         "empleado_form.html",
         empleado=empleado,
-        sucursales=sucursales
+        sucursales=sucursales,
+        usuario=usuario
     )
+
 
 # =========================
 # ACTIVAR / DESACTIVAR

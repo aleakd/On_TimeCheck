@@ -13,17 +13,22 @@
 
 
 <div class="card shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-striped mb-0">
+    <div class="card-body">
+        <div class="table-responsive">
+    <table class="table align-middle">
             <thead class="table-dark">
                 <tr>
                     <th>DNI</th>
                     <th>Apellido</th>
                     <th>Nombre</th>
                     <th>Sucursal</th>
+                    <th>Usuario</th>
                     <th>Estado</th>
-                    <th>Acciones</th>
-                    <th>Editar</th>
+                    <th>Asignado</th>
+                    <th style="width:180px;">Email</th>
+                    <th style="width:120px;">Acciones</th>
+                    <th style="width:90px;">Editar</th>
+
                 </tr>
             </thead>
             <tbody>
@@ -34,12 +39,39 @@
                     <td>{{ e.nombre }}</td>
                     <td>{{ e.sucursal.nombre }}</td>
                     <td>
+                     {% set u = usuarios_por_empleado.get(e.id) %}
+                     {% if u %}
+                         <span class="badge" style="background:#E0F2FE; color:#2563EB;">{{ u.rol }}</span>
+                     {% else %}
+                         <span class="text-muted">Sin usuario</span>
+                     {% endif %}
+                    </td>
+                    <td>
                         {% if e.activo %}
                             <span class="badge bg-success">Activo</span>
                         {% else %}
                             <span class="badge bg-secondary">Inactivo</span>
                         {% endif %}
+
                     </td>
+                    <td>{% if not usuarios_por_empleado.get(e.id) %}
+        <a href="{{ url_for('usuarios.nuevo_usuario', empleado_id=e.id) }}"
+           class="btn btn-sm btn-outline-success">
+            Crear usuario
+        </a>
+    {% else %}
+           <span class="badge bg-secondary">Ya tiene usuario</span>
+    {% endif %}</td>
+
+                    <td>
+    {% set u = usuarios_por_empleado.get(e.id) %}
+    {% if u and u.email %}
+        <span class="badge" style="background:#E0F2FE; color:#2563EB;">{{ u.email }}</span>
+    {% else %}
+        <span class="text-muted">—</span>
+    {% endif %}
+</td>
+
                     <td>
                         <a href="{{ url_for('empleados.toggle_empleado', id=e.id) }}"
                            class="btn btn-sm {% if e.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
@@ -66,6 +98,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 

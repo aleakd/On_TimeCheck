@@ -252,6 +252,10 @@ tr:hover {
   background: #f1f5f9;
 }
 
+.table td {
+  vertical-align: middle;
+}
+
 /* ===== DASHBOARD STATS ===== */
 .stats-grid {
   display: grid;

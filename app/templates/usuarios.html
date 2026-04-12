@@ -12,9 +12,9 @@
         <tr>
             <th>Email</th>
             <th>Rol</th>
-            <th>Estado</th>
-            <th>Editar</th>
+            <th>Usuario</th>
             <th>Password</th>
+            <th>Eliminar</th>
         </tr>
     </thead>
 
@@ -23,29 +23,29 @@
         <tr>
             <td>{{ u.email }}</td>
             <td>{{ u.rol }}</td>
-            <td>
-                {% if u.activo %}
-                    <span class="badge bg-success">Activo</span>
-                {% else %}
-                    <span class="badge bg-secondary">Inactivo</span>
-                {% endif %}
-            </td>
-            <td class="d-flex gap-2">
-                <a href="{{ url_for('usuarios.editar_usuario', id=u.id) }}"
-                   class="btn btn-sm btn-outline-secondary">
-                   Editar
-                </a>
 
-                <a href="{{ url_for('usuarios.toggle_usuario', id=u.id) }}"
-                   class="btn btn-sm btn-outline-primary">
-                   Activar / Desactivar
-                </a>
-            </td>
+            <td>
+            {% if u.empleado %}
+                {{ u.empleado.apellido }}, {{ u.empleado.nombre }}
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
             <td><form method="POST" action="/usuarios/reset-password/{{ u.id }}" style="display:inline;">
     <input type="password" name="nueva_password" placeholder="Nueva contraseña"
            class="form-control form-control-sm d-inline w-50" required>
     <button class="btn btn-sm btn-danger">Reset</button>
 </form></td>
+            <td>
+    <form method="POST"
+          action="{{ url_for('usuarios.eliminar_usuario', id=u.id) }}"
+          onsubmit="return confirm('¿Eliminar este usuario?');"
+          style="display:inline;">
+        <button class="btn btn-sm btn-outline-danger">
+            Eliminar
+        </button>
+    </form>
+</td>
 
         </tr>
         {% endfor %}

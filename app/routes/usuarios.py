@@ -51,11 +51,23 @@ def nuevo_usuario():
         email = request.form.get('email').lower().strip()
         password = request.form.get('password')
         rol = request.form.get('rol')
-        empleado_id = request.form.get('empleado_id') or None
-        # 🚨 BUGFIX CRÍTICO
+        empleado_id = request.form.get('empleado_id')
+        empleado_id = int(empleado_id) if empleado_id else None
+
+        if empleado_id:
+            existe_usuario = Usuario.query.filter_by(
+                empleado_id=empleado_id,
+                empresa_id=current_user.empresa_id
+            ).first()
+
+            if existe_usuario:
+                flash('Este empleado ya tiene un usuario asignado', 'warning')
+                return redirect(url_for('empleados.lista_empleados'))
+
+
         # No permitir crear usuario EMPLEADO sin empleado vinculado
-        if rol == 'empleado' and not empleado_id:
-            flash('Debe seleccionar un empleado para usuarios de tipo EMPLEADO', 'danger')
+        if rol != 'admin' and not empleado_id:
+            flash('Debe seleccionar un empleado para este tipo de usuario', 'danger')
             return redirect(url_for('usuarios.nuevo_usuario'))
         # 🔐 seguridad multiempresa
         if empleado_id:
@@ -82,7 +94,7 @@ def nuevo_usuario():
             email=email,
             password_hash=generate_password_hash(password),
             rol=rol,
-            empleado_id=empleado_id if rol == 'empleado' else None,
+            empleado_id=int(empleado_id) if empleado_id else None,
             activo=True
         )
 
@@ -158,7 +170,7 @@ def editar_usuario(id):
         empleado_id = request.form.get('empleado_id') or None
 
         # 🔐 Validación importante SaaS
-        if rol == 'empleado' and not empleado_id:
+        if rol != 'admin' and not empleado_id:
             flash("Debes seleccionar un empleado para este usuario", "danger")
             return redirect(url_for('usuarios.editar_usuario', id=id))
 
@@ -216,4 +228,31 @@ def reset_password(id):
     db.session.commit()
 
     flash("Contraseña reseteada correctamente", "success")
+    return redirect(url_for('usuarios.lista_usuarios'))
+
+
+
+@usuarios_bp.route('/eliminar/<int:id>', methods=['POST'])
+@login_required
+@solo_admin  # o el decorador que uses
+def eliminar_usuario(id):
+
+    usuario = Usuario.query.filter_by(
+        id=id,
+        empresa_id=current_user.empresa_id
+    ).first_or_404()
+
+    # 🚫 evitar que se elimine a sí mismo
+    if usuario.id == current_user.id:
+        flash("No podés eliminar tu propio usuario", "danger")
+        return redirect(url_for('usuarios.lista_usuarios'))
+
+    if usuario.rol == 'admin':
+        flash("No se puede eliminar un administrador", "warning")
+        return redirect(...)
+
+    db.session.delete(usuario)
+    db.session.commit()
+
+    flash("Usuario eliminado correctamente", "success")
     return redirect(url_for('usuarios.lista_usuarios'))

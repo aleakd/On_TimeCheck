@@ -58,14 +58,14 @@ const rolSelect = document.getElementById('rol');
 const empleadoBox = document.getElementById('empleado-box');
 
 function toggleEmpleado() {
-    if (rolSelect.value === 'empleado') {
+    if (rolSelect.value !== 'admin') {
         empleadoBox.style.display = 'block';
     } else {
         empleadoBox.style.display = 'none';
     }
 }
 
-toggleEmpleado(); // ejecutar al cargar
+toggleEmpleado();
 rolSelect.addEventListener('change', toggleEmpleado);
 </script>
 
