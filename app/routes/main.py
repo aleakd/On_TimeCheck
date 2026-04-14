@@ -274,6 +274,45 @@ def dashboard():
         .all()
     )
 
+    # ==========================================
+    # 📍 EMPLEADOS POR SUCURSAL (KIOSCO)
+    # ==========================================
+
+    from app.models import Sucursal
+
+    # Traer sucursales
+    sucursales = Sucursal.query.filter_by(
+        empresa_id=current_user.empresa_id,
+        activa=True
+    ).all()
+
+    # Inicializar estructura
+    sucursales_data = {s.id: {
+        "nombre": s.nombre,
+        "empleados": []
+    } for s in sucursales}
+
+    # Usamos los últimos registros (ya calculados arriba)
+    for emp in empleados:
+
+        registro = registro_dict.get(emp.id)
+
+        if not registro or not registro.sucursal_id:
+            continue
+
+        estado = "ACTIVO" if registro.tipo == "INGRESO" else "FUERA"
+
+        hora_ar = registro.fecha_hora.astimezone(tz_ar)
+
+        sucursal_id = registro.sucursal_id
+
+        if sucursal_id in sucursales_data:
+            sucursales_data[sucursal_id]["empleados"].append({
+                "nombre": f"{emp.apellido} {emp.nombre}",
+                "estado": estado,
+                "hora": hora_ar.strftime("%H:%M")
+            })
+
     return render_template(
         'dashboard.html',
         total_empleados=total_empleados,
@@ -286,5 +325,6 @@ def dashboard():
         empleados_estado=empleados_estado,
         empleados_trabajando=empleados_trabajando,
         alertas_tarde=alertas_tarde,
-        pendientes=pendientes
+        pendientes=pendientes,
+        sucursales_data=sucursales_data
     )

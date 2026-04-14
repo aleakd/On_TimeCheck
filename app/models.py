@@ -196,7 +196,7 @@ class AuditLog(db.Model):
 
 
 # =========================
-# AUDITORÍA DEL SISTEMA
+# HORARIOS DEL EMPLEADO
 # ========================
 class HorarioEmpleado(db.Model):
     __tablename__ = "horario_empleado"
@@ -220,3 +220,24 @@ class HorarioEmpleado(db.Model):
     observacion = db.Column(db.String(200), nullable=True)
 
     empleado = db.relationship("Empleado")
+
+# =========================
+# KIOSCO
+# ========================
+class Kiosco(db.Model):
+    __tablename__ = 'kiosco'
+
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey('empresa.id'),
+        nullable=False
+    )
+    sucursal_id = db.Column(
+        db.Integer,
+        db.ForeignKey('sucursal.id'),
+        nullable=False
+    )
+    token = db.Column(db.String(100), unique=True, nullable=False)
+    activo = db.Column(db.Boolean, default=True)
+    sucursal = db.relationship('Sucursal')

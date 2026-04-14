@@ -72,13 +72,14 @@ actualizarReloj();
 function fichar(){
 
     const dni = document.getElementById("dni").value;
+    const kiosco_token = "{{ kiosco_token }}";
 
     if(!dni){
         mostrarMensaje("Ingrese DNI","error");
         return;
     }
 
-    fetch("/kiosco/fichar",{
+    fetch(`/kiosco/${kiosco_token}/fichar`,{
         method:"POST",
         headers:{
             "Content-Type":"application/json"

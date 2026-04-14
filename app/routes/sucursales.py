@@ -3,6 +3,9 @@ from flask_login import login_required, current_user
 from app.models import db, Sucursal
 from app.roles import solo_admin
 from app.audit import registrar_evento
+import secrets
+from app.models import Kiosco
+
 
 sucursales_bp = Blueprint(
     'sucursales',
@@ -21,10 +24,19 @@ def lista_sucursales():
     sucursales = Sucursal.query.filter_by(
         empresa_id=current_user.empresa_id
     ).all()
+    kioscos = Kiosco.query.filter_by(
+        empresa_id=current_user.empresa_id,
+        activo=True
+    ).all()
+
+    kioscos_por_sucursal = {
+        k.sucursal_id: k for k in kioscos
+    }
 
     return render_template(
         'sucursales.html',
-        sucursales=sucursales
+        sucursales=sucursales,
+        kioscos_por_sucursal=kioscos_por_sucursal
     )
 
 # =========================
@@ -137,3 +149,30 @@ def editar_sucursal(id):
         'sucursal_form.html',
         sucursal=sucursal
     )
+
+
+@sucursales_bp.route('/<int:id>/crear_kiosco')
+@login_required
+@solo_admin
+def crear_kiosco(id):
+
+    sucursal = Sucursal.query.filter_by(
+        id=id,
+        empresa_id=current_user.empresa_id
+    ).first_or_404()
+
+    token = secrets.token_urlsafe(16)
+
+    kiosco = Kiosco(
+        empresa_id=current_user.empresa_id,
+        sucursal_id=sucursal.id,
+        token=token
+    )
+
+    db.session.add(kiosco)
+    db.session.commit()
+
+    flash(f"Kiosco listo: {request.host_url}kiosco/{token}", "success")
+
+
+    return redirect(url_for('sucursales.lista_sucursales'))

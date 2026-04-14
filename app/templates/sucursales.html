@@ -47,6 +47,20 @@
                            class="btn btn-sm btn-primary">
                           Editar
                         </a>
+                       {% set k = kioscos_por_sucursal.get(s.id) %}
+
+{% if k %}
+    <a href="{{ url_for('kiosco.pantalla', token=k.token) }}"
+       class="btn btn-sm btn-success"
+       target="_blank">
+        Abrir kiosco
+    </a>
+{% else %}
+    <a href="{{ url_for('sucursales.crear_kiosco', id=s.id) }}"
+       class="btn btn-sm btn-primary">
+        Crear kiosco
+    </a>
+{% endif %}
                         <a href="{{ url_for('sucursales.toggle_sucursal', id=s.id) }}"
                            class="btn btn-sm {% if s.activa %}btn-warning{% else %}btn-success{% endif %}">
                             {% if s.activa %}

@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-from app.models import db, Empleado, Asistencia, AuditLog
+from app.models import db, Empleado, Asistencia, AuditLog, Kiosco
 from app.multitenant import empleados_empresa, asistencias_empresa
 from app.security import requiere_ip_empresa
 from app.audit import registrar_evento
@@ -19,33 +19,47 @@ kiosco_bp = Blueprint(
 # ==========================================
 # PANTALLA KIOSCO
 # ==========================================
-@kiosco_bp.route("/")
+@kiosco_bp.route("/<token>")
 @login_required
 @requiere_ip_empresa
-def pantalla():
+def pantalla(token):
+    kiosco = Kiosco.query.filter_by(
+        token=token,
+        empresa_id=current_user.empresa_id,
+        activo=True
+    ).first()
+
+    if not kiosco:
+        return "Kiosco inválido", 404
 
     if current_user.rol not in ["admin", "supervisor"]:
         return "No autorizado", 403
 
-    return render_template("kiosco.html", modo_kiosco=True)
+    return render_template("kiosco.html", modo_kiosco=True, kiosco_token=token)
 
 
 # ==========================================
 # REGISTRAR FICHAJE POR DNI
 # ==========================================
-@kiosco_bp.route("/fichar", methods=["POST"])
+@kiosco_bp.route("/<token>/fichar", methods=["POST"])
 @login_required
 @requiere_ip_empresa
-def fichar():
+def fichar(token):
+    kiosco = Kiosco.query.filter_by(
+        token=token,
+        empresa_id=current_user.empresa_id,
+        activo=True
+    ).first()
+
+    if not kiosco:
+        return jsonify({"status": "error", "mensaje": "Kiosco inválido"})
 
     dni = request.json.get("dni")
-
     empleado = (
         empleados_empresa()
         .filter_by(dni=dni, activo=True)
         .first()
     )
-
     if not empleado:
         return jsonify({
             "status": "error",
@@ -116,7 +130,7 @@ def fichar():
     asistencia = Asistencia(
         empleado_id=empleado.id,
         empresa_id=current_user.empresa_id,
-        sucursal_id=empleado.sucursal_id,
+        sucursal_id=kiosco.sucursal_id,
         tipo=tipo,
         actividad="KIOSCO",
         fecha_hora=datetime.now(timezone.utc)
