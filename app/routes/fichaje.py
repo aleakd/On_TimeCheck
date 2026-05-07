@@ -22,7 +22,7 @@ fichaje_bp = Blueprint(
 @login_required
 def home():
 
-    if current_user.rol != "empleado":
+    if current_user.rol not in ["empleado", "supervisor"]:
         return redirect(url_for("main.dashboard"))
 
     empleado_id = current_user.empleado_id
@@ -60,7 +60,7 @@ def home():
 @requiere_ip_empresa
 def fichar_ingreso():
 
-    if current_user.rol != "empleado":
+    if current_user.rol not in ["empleado", "supervisor"]:
         return redirect(url_for("main.dashboard"))
 
     empleado_id = current_user.empleado_id
@@ -152,7 +152,7 @@ def fichar_ingreso():
 @login_required
 def fichar_salida():
 
-    if current_user.rol != "empleado":
+    if current_user.rol not in ["empleado", "supervisor"]:
         return redirect(url_for("main.dashboard"))
 
     empleado_id = current_user.empleado_id

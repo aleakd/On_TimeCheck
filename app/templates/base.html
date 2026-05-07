@@ -99,7 +99,7 @@
 
             <hr>
             <!-- empleado -->
-            {% if current_user.rol in ['admin','supervisor','empleado'] %}
+            {% if current_user.rol in ['supervisor','empleado'] %}
                 <a href="/fichaje" class="btn btn-outline-light w-100 mb-2">🕒 Fichaje</a>
 
             {% endif %}
