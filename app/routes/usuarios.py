@@ -247,9 +247,9 @@ def eliminar_usuario(id):
         flash("No podés eliminar tu propio usuario", "danger")
         return redirect(url_for('usuarios.lista_usuarios'))
 
-    if usuario.rol == 'admin':
-        flash("No se puede eliminar un administrador", "warning")
-        return redirect(...)
+    #if usuario.rol == 'admin':
+     #   flash("No se puede eliminar un administrador", "warning")
+      #  return redirect(...)
 
     db.session.delete(usuario)
     db.session.commit()
