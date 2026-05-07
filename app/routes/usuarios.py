@@ -170,7 +170,7 @@ def editar_usuario(id):
         empleado_id = request.form.get('empleado_id') or None
 
         # 🔐 Validación importante SaaS
-        if rol != 'admin' and not empleado_id:
+        if rol in ['empleado', 'supervisor'] and not empleado_id:
             flash("Debes seleccionar un empleado para este usuario", "danger")
             return redirect(url_for('usuarios.editar_usuario', id=id))
 
@@ -178,7 +178,7 @@ def editar_usuario(id):
         usuario.rol = rol
 
         # actualizar vínculo empleado
-        if rol == 'empleado':
+        if rol in ['empleado', 'supervisor']:
             usuario.empleado_id = empleado_id
         else:
             usuario.empleado_id = None
