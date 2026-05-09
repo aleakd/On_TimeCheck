@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
-from flask_login import login_user, logout_user, login_required
+from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from app import login_manager, current_user
 from app.models import Usuario, Empresa, db, Sucursal
@@ -16,9 +16,8 @@ def load_user(user_id):
 #________________________________________________________________________________________________________________-
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-
     # 👉 si ya está logueado, evitar volver a loguear
-    from flask_login import current_user
+
     if current_user.is_authenticated:
         if current_user.rol == "empleado":
             return redirect(url_for("fichaje.home"))

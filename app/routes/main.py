@@ -167,16 +167,17 @@ def dashboard():
     # 👤 EMPLEADOS SEGÚN ROL
     # ==========================================
 
-    if current_user.rol == "empleado":
 
-        empleados = [current_user.empleado]
+    # ==========================================
+    # RESTO DE ROLES
+    # ==========================================
 
-    else:
+    empleados = Empleado.query.filter_by(
+        empresa_id=current_user.empresa_id,
+        activo=True
+    ).all()
 
-        empleados = Empleado.query.filter_by(
-            empresa_id=current_user.empresa_id,
-            activo=True
-        ).all()
+
 
     # ==========================================
     # ESTADO ACTUAL DEL PERSONAL
@@ -205,6 +206,46 @@ def dashboard():
     )
 
     registro_dict = {r.empleado_id: r for r in ultimos_registros}
+
+
+    # ==========================================
+    # DASHBOARD EMPLEADO
+    # ==========================================
+
+    if current_user.rol == "empleado":
+
+        empleado = current_user.empleado
+
+        # estado actual del empleado
+        estado_actual = "sin_registro"
+        hora_estado = None
+
+        registro = registro_dict.get(empleado.id)
+
+        if registro:
+            estado_actual = (
+                "ingreso"
+                if registro.tipo == "INGRESO"
+                else "salida"
+            )
+
+            hora_estado = registro.fecha_hora.astimezone(tz_ar).strftime("%H:%M")
+
+        return render_template(
+            'dashboard_empleado.html',
+
+            empleado=empleado,
+
+            fecha_hoy=hoy,
+
+            horas_mes=horas_mes,
+
+            chart_labels=labels,
+            chart_data=data,
+
+            estado_actual=estado_actual,
+            hora_estado=hora_estado
+        )
 
     empleados_estado = []
 

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- BIENVENIDA -->
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-body">
+
+            <h2 class="mb-1">
+                👋 Hola {{ empleado.nombre }}
+            </h2>
+
+            <small class="text-muted">
+                Panel personal
+            </small>
+
+        </div>
+
+    </div>
+
+
+    <!-- KPIs -->
+    <div class="row mb-4">
+
+        <!-- HORAS -->
+        <div class="col-md-6 mb-3">
+
+            <div class="card shadow-sm border-0 text-center">
+
+                <div class="card-body">
+
+                    <div style="font-size:42px;font-weight:700;">
+                        {{ horas_mes }}
+                    </div>
+
+                    <div class="text-muted">
+                        Horas trabajadas del mes
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ESTADO -->
+        <div class="col-md-6 mb-3">
+
+            <div class="card shadow-sm border-0 text-center">
+
+                <div class="card-body">
+
+                    <div style="font-size:32px;font-weight:700;">
+
+                        {% if estado_actual == 'ingreso' %}
+                            🟢 ACTIVO
+
+                        {% elif estado_actual == 'salida' %}
+                            ⚪ FUERA
+
+                        {% else %}
+                            🔴 SIN REGISTRO
+                        {% endif %}
+
+                    </div>
+
+                    <div class="text-muted">
+
+                        {% if hora_estado %}
+                            Último movimiento: {{ hora_estado }}
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- GRAFICO -->
+    <div class="card shadow-sm border-0">
+
+        <div class="card-body">
+
+            <h4 class="mb-4">
+                📈 Horas trabajadas
+            </h4>
+
+            <canvas id="horasChart"></canvas>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const ctx = document.getElementById('horasChart');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: {{ chart_labels|tojson }},
+        datasets: [{
+            label: 'Horas',
+            data: {{ chart_data|tojson }},
+            borderWidth: 1
+        }]
+    }
+});
+
+</script>
+
+{% endblock %}
