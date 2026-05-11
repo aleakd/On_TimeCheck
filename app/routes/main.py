@@ -21,7 +21,7 @@ def dashboard():
     tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
 
     hoy = datetime.now(tz_ar).date()
-    ahora = datetime.now()
+    ahora = datetime.now(tz_ar)
 
     # 👥 empleados activos
     total_empleados = empleados_empresa().filter_by(activo=True).count()
@@ -49,7 +49,13 @@ def dashboard():
             trabajando += 1
 
     # ⏱ horas del mes
-    primer_dia_mes = ahora.replace(day=1)
+    primer_dia_mes = ahora.replace(
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0
+    )
 
     asistencias_mes = (
         asistencias_empresa()
