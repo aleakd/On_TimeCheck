@@ -102,6 +102,8 @@ def requiere_ip_empresa(func):
 
         if not ip_autorizada_sucursal():
             flash('⛔ No estás conectado a la red autorizada de la sucursal', 'danger')
+            flash(f'🌐 IP detectada: {obtener_ip_cliente()}', 'warning')
+
             return redirect(url_for('reportes.index'))
 
         return func(*args, **kwargs)
