@@ -76,7 +76,13 @@ def ip_autorizada_sucursal():
         return False
 
     if sucursal.ip_publica:
-        if ip_cliente == sucursal.ip_publica:
+
+        ips_permitidas = [
+            ip.strip()
+            for ip in sucursal.ip_publica.split(',')
+        ]
+
+        if ip_cliente in ips_permitidas:
             return True
 
     if sucursal.ip_rango:
