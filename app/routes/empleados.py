@@ -5,7 +5,7 @@ from app.multitenant import empleados_empresa
 from app.roles import solo_admin, admin_o_supervisor
 from app.audit import registrar_evento
 from datetime import datetime
-
+from werkzeug.security import generate_password_hash
 
 empleados_bp = Blueprint('empleados', __name__, url_prefix='/empleados')
 
@@ -177,36 +177,51 @@ def editar_empleado(id):
         db.session.commit()
 
         # =========================
-        # CREAR USUARIO (OPCIONAL)
+        # USUARIO ASOCIADO
         # =========================
+
         usuario_email = request.form.get('usuario_email')
         usuario_password = request.form.get('usuario_password')
         usuario_rol = request.form.get('usuario_rol')
 
-        if usuario_email and usuario_password:
+        usuario = Usuario.query.filter_by(
+            empleado_id=empleado.id,
+            empresa_id=current_user.empresa_id
+        ).first()
 
-            # 🔒 evitar duplicado
-            existe = Usuario.query.filter_by(
+        # 🔒 validar rol
+        if usuario_rol not in ['empleado', 'supervisor']:
+            usuario_rol = 'empleado'
+
+        # =========================
+        # EDITAR USUARIO EXISTENTE
+        # =========================
+        if usuario:
+
+            usuario.email = usuario_email
+            usuario.rol = usuario_rol
+
+            # cambiar password solo si completa
+            if usuario_password:
+                usuario.password_hash = generate_password_hash(usuario_password)
+
+        # =========================
+        # CREAR NUEVO USUARIO
+        # =========================
+        elif usuario_email and usuario_password:
+
+            nuevo_usuario = Usuario(
+                email=usuario_email,
+                rol=usuario_rol,
                 empleado_id=empleado.id,
                 empresa_id=current_user.empresa_id
-            ).first()
+            )
 
-            if not existe:
+            nuevo_usuario.password_hash = generate_password_hash(usuario_password)
 
-                # 🔒 validar rol
-                if usuario_rol not in ['empleado', 'supervisor']:
-                    usuario_rol = 'empleado'
+            db.session.add(nuevo_usuario)
 
-                nuevo_usuario = Usuario(
-                    email=usuario_email,
-                    rol=usuario_rol,
-                    empleado_id=empleado.id,
-                    empresa_id=current_user.empresa_id
-                )
-                nuevo_usuario.set_password(usuario_password)
-
-                db.session.add(nuevo_usuario)
-                db.session.commit()
+        db.session.commit()
 
         registrar_evento(
             "EDITAR",

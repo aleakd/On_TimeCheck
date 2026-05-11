@@ -6,9 +6,14 @@
 <form method="POST" class="card shadow-sm p-4">
 
     <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input value="{{ usuario.email }}" class="form-control" disabled>
-    </div>
+    <label class="form-label">Email</label>
+
+    <input type="email"
+           name="email"
+           value="{{ usuario.email }}"
+           class="form-control"
+           required>
+</div>
 
     <div class="mb-3">
         <label class="form-label">Nueva contraseña (opcional)</label>

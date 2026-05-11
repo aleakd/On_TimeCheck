@@ -165,6 +165,17 @@ def editar_usuario(id):
 
     if request.method == 'POST':
 
+        email = request.form.get('email').lower().strip()
+        # verificar email duplicado
+
+        existe = Usuario.query.filter(
+            Usuario.email == email,
+            Usuario.id != usuario.id
+        ).first()
+
+        if existe:
+            flash("Ya existe otro usuario con ese email", "warning")
+            return redirect(url_for('usuarios.editar_usuario', id=id))
         rol = request.form.get('rol')
         password = request.form.get('password')
         empleado_id = request.form.get('empleado_id') or None
@@ -174,7 +185,8 @@ def editar_usuario(id):
             flash("Debes seleccionar un empleado para este usuario", "danger")
             return redirect(url_for('usuarios.editar_usuario', id=id))
 
-        # actualizar rol
+        # actualizar rol y email
+        usuario.email = email
         usuario.rol = rol
 
         # actualizar vínculo empleado
