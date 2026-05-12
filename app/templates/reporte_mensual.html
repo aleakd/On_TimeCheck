@@ -81,6 +81,25 @@
     </tbody>
 </table>
 
+<div class="card shadow-sm border-0 mt-4">
+
+    <div class="card-body text-center">
+
+        <h4 class="mb-2">
+            ⏱ Total general trabajado
+        </h4>
+
+        <div style="font-size:40px;font-weight:700;">
+
+            {{ total_general }}
+
+        </div>
+
+    </div>
+
+</div>
+
+
 <a href="{{ url_for('reportes.exportar_mensual_excel',
                        desde=request.args.get('desde'),
                        hasta=request.args.get('hasta'),

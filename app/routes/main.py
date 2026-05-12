@@ -222,36 +222,144 @@ def dashboard():
 
         empleado = current_user.empleado
 
-        # estado actual del empleado
-        estado_actual = "sin_registro"
-        hora_estado = None
+        # ==========================================
+        # 📲 ÚLTIMOS FICHAJES
+        # ==========================================
 
-        registro = registro_dict.get(empleado.id)
+        ultimos_fichajes = (
+            Asistencia.query
+            .filter_by(
+                empresa_id=current_user.empresa_id,
+                empleado_id=empleado.id
+            )
+            .order_by(Asistencia.fecha_hora.desc())
+            .limit(10)
+            .all()
+        )
 
-        if registro:
-            estado_actual = (
-                "ingreso"
-                if registro.tipo == "INGRESO"
-                else "salida"
+        # ==========================================
+        # DASHBOARD EMPLEADO
+        # ==========================================
+
+        if current_user.rol == "empleado":
+
+            empleado = current_user.empleado
+
+            # ==========================================
+            # 📅 ASISTENCIAS SOLO DEL EMPLEADO
+            # ==========================================
+
+            asistencias_empleado = (
+                Asistencia.query
+                .filter(
+                    Asistencia.empresa_id == current_user.empresa_id,
+                    Asistencia.empleado_id == empleado.id,
+                    Asistencia.fecha_hora >= primer_dia_mes
+                )
+                .order_by(Asistencia.fecha_hora)
+                .all()
             )
 
-            hora_estado = registro.fecha_hora.astimezone(tz_ar).strftime("%H:%M")
+            # ==========================================
+            # ⏱ HORAS DEL MES
+            # ==========================================
 
-        return render_template(
-            'dashboard_empleado.html',
+            total_segundos_emp = 0
+            ultimo_ingreso_emp = None
 
-            empleado=empleado,
+            for a in asistencias_empleado:
 
-            fecha_hoy=hoy,
+                if a.tipo == "INGRESO":
+                    ultimo_ingreso_emp = a.fecha_hora
 
-            horas_mes=horas_mes,
+                elif a.tipo == "SALIDA" and ultimo_ingreso_emp:
 
-            chart_labels=labels,
-            chart_data=data,
+                    delta = (
+                            a.fecha_hora - ultimo_ingreso_emp
+                    ).total_seconds()
 
-            estado_actual=estado_actual,
-            hora_estado=hora_estado
-        )
+                    total_segundos_emp += delta
+
+                    ultimo_ingreso_emp = None
+
+            horas_emp = int(total_segundos_emp // 3600)
+            minutos_emp = int((total_segundos_emp % 3600) // 60)
+
+            horas_mes_empleado = f"{horas_emp:02d}:{minutos_emp:02d}"
+
+            # ==========================================
+            # 📈 GRÁFICO INDIVIDUAL
+            # ==========================================
+
+            horas_por_dia_emp = defaultdict(int)
+
+            ultimo_ingreso_emp = None
+
+            for a in asistencias_empleado:
+
+                fecha = a.fecha_hora.date()
+
+                if a.tipo == "INGRESO":
+                    ultimo_ingreso_emp = a.fecha_hora
+
+                elif a.tipo == "SALIDA" and ultimo_ingreso_emp:
+
+                    delta = (
+                            a.fecha_hora - ultimo_ingreso_emp
+                    ).total_seconds()
+
+                    horas_por_dia_emp[fecha] += delta
+
+                    ultimo_ingreso_emp = None
+
+            labels_emp = []
+            data_emp = []
+
+            for dia in sorted(horas_por_dia_emp.keys()):
+                labels_emp.append(dia.strftime("%d/%m"))
+
+                data_emp.append(
+                    round(horas_por_dia_emp[dia] / 3600, 2)
+                )
+
+            # ==========================================
+            # 🟢 ESTADO ACTUAL
+            # ==========================================
+
+            estado_actual = "sin_registro"
+            hora_estado = None
+
+            registro = registro_dict.get(empleado.id)
+
+            if registro:
+                estado_actual = (
+                    "ingreso"
+                    if registro.tipo == "INGRESO"
+                    else "salida"
+                )
+
+                hora_estado = (
+                    registro.fecha_hora
+                    .astimezone(tz_ar)
+                    .strftime("%H:%M")
+                )
+
+            return render_template(
+                'dashboard_empleado.html',
+
+                empleado=empleado,
+
+                fecha_hoy=hoy,
+
+                horas_mes=horas_mes_empleado,
+
+                chart_labels=labels_emp,
+                chart_data=data_emp,
+
+                estado_actual=estado_actual,
+                hora_estado=hora_estado,
+                ultimos_fichajes=ultimos_fichajes
+            )
 
     empleados_estado = []
 

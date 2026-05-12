@@ -158,6 +158,97 @@
 
 </div>
 
+<!-- ÚLTIMOS FICHAJES -->
+<div class="card shadow-sm border-0 mt-4">
+
+    <div class="card-body">
+
+        <h4 class="mb-4">
+            📲 Últimos fichajes
+        </h4>
+
+        <div class="table-responsive">
+
+            <table class="table align-middle">
+
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Hora</th>
+                        <th>Actividad</th>
+                        <th>Sucursal</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for a in ultimos_fichajes %}
+
+                    <tr>
+
+                        <td>
+
+                            {% if a.tipo == "INGRESO" %}
+
+                                <span class="badge bg-success">
+                                    INGRESO
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-danger">
+                                    SALIDA
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+                            {{ a.fecha_hora|hora_ar|safe }}
+                        </td>
+
+                        <td>
+                            {{ a.actividad or '-' }}
+                        </td>
+
+                        <td>
+
+                            {% if a.sucursal %}
+                                {{ a.sucursal.nombre }}
+                            {% else %}
+                                -
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+
+                        <td colspan="4"
+                            class="text-center text-muted">
+
+                            No hay fichajes registrados
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
 
 <script>
 

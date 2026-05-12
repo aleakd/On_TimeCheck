@@ -161,6 +161,9 @@ def reporte_mensual():
     fecha_hasta = request.args.get("hasta")
     hoy = datetime.now(tz_ar)
 
+
+
+
     # 👉 si no vienen fechas, usar mes actual
     if not fecha_desde or not fecha_hasta:
         desde = datetime(hoy.year, hoy.month, 1, tzinfo=tz_ar)
@@ -254,6 +257,25 @@ def reporte_mensual():
 
     resumen.sort(key=lambda x: x["empleado"].apellido)
 
+    # ==========================================
+    # ⏱ TOTAL GENERAL DEL REPORTE
+    # ==========================================
+
+    total_segundos_general = 0
+
+    for r in resumen:
+
+        horas, minutos = r["horas"].split(":")
+        total_segundos_general += (
+            int(horas) * 3600 +
+            int(minutos) * 60
+        )
+
+    total_horas = int(total_segundos_general // 3600)
+    total_minutos = int((total_segundos_general % 3600) // 60)
+
+    total_general = f"{total_horas:02d}:{total_minutos:02d}"
+
     return render_template(
         "reporte_mensual.html",
         resumen=resumen,
@@ -261,7 +283,8 @@ def reporte_mensual():
         month=None,
         nombre_mes=nombre_mes,
         sucursales=sucursales,
-        sucursal_id=sucursal_id
+        sucursal_id=sucursal_id,
+        total_general=total_general
     )
 
 
@@ -303,13 +326,35 @@ def detalle_mensual_empleado(empleado_id):
         ):
             detalle.append(d)
 
+    # ==========================================
+    # ⏱ TOTAL HORAS EMPLEADO
+    # ==========================================
+
+    total_segundos = sum(
+
+        (
+            (d["salida"] - d["ingreso"]).total_seconds()
+        )
+
+        for d in detalle
+
+        if d["salida"]
+
+    )
+
+    horas_total = int(total_segundos // 3600)
+    minutos_total = int((total_segundos % 3600) // 60)
+
+    total_empleado = f"{horas_total:02d}:{minutos_total:02d}"
+
     return render_template(
         "reporte_mensual_detalle.html",
         empleado=empleado,
         detalle=detalle,
         nombre_mes=f"{desde.strftime('%d/%m')} - {hasta.strftime('%d/%m')}",
         year=None,
-        month=None
+        month=None,
+        total_empleado=total_empleado
     )
 
 

@@ -5,8 +5,9 @@
 
     <h2 class="mb-1">Fichaje</h2>
     <p class="text-muted mb-4">
-        {{ current_user.empleado.apellido }}, {{ current_user.empleado.nombre }}
-    </p>
+        {{ current_user.empleado.apellido }}, {{ current_user.empleado.nombre }}</p>
+    <h1 style="font-size:3em;">👋 Hola {{ current_user.empleado.nombre }}</h1>
+
 
     {% if ultima %}
         <div class="alert alert-secondary">
