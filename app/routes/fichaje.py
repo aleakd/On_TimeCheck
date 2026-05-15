@@ -81,44 +81,88 @@ def fichar_ingreso():
 
     fecha_hora_ar = datetime.now(tz_ar)
 
+
     # =========================
     # ⏰ CONTROL DE LLEGADA TARDE
+    # SOLO PRIMER INGRESO DEL DÍA
     # =========================
-    if evaluar_llegada_tarde(empleado, fecha_hora_ar):
 
-        inicio_dia = fecha_hora_ar.replace(
-            hour=0, minute=0, second=0, microsecond=0
+    inicio_dia_ar = fecha_hora_ar.replace(
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0
+    )
+
+    fin_dia_ar = inicio_dia_ar + timedelta(days=1)
+
+    inicio_dia = inicio_dia_ar.astimezone(
+        timezone.utc
+    )
+
+    fin_dia = fin_dia_ar.astimezone(
+        timezone.utc
+    )
+
+    ingreso_previo = (
+        asistencias_empresa()
+        .filter(
+            Asistencia.empleado_id == empleado_id,
+            Asistencia.tipo == "INGRESO",
+            Asistencia.fecha_hora >= inicio_dia,
+            Asistencia.fecha_hora < fin_dia
         )
-        fin_dia = inicio_dia + timedelta(days=1)
+        .first()
+    )
 
-        ya_existe = db.session.query(db.exists().where(
-            db.and_(
-                AuditLog.empresa_id == current_user.empresa_id,
-                AuditLog.entidad == "PUNTUALIDAD",
-                AuditLog.created_at >= inicio_dia.astimezone(timezone.utc),
-                AuditLog.created_at < fin_dia.astimezone(timezone.utc)
-            )
-        )).scalar()
+    # 🔥 SOLO evaluar primer ingreso
+    if not ingreso_previo:
 
-        if not ya_existe:
-            turno = obtener_turno_dia(empleado, fecha_hora_ar)
+        if evaluar_llegada_tarde(
+                empleado,
+                fecha_hora_ar
+        ):
 
-            hora_turno_str = (
-                turno["inicio"].strftime('%H:%M')
-                if turno and turno["inicio"]
-                else "--:--"
-            )
+            ya_existe = db.session.query(
+                db.exists().where(
+                    db.and_(
+                        AuditLog.empresa_id == current_user.empresa_id,
+                        AuditLog.entidad == "PUNTUALIDAD",
 
-            registrar_evento(
-                accion="ALERTA",
-                entidad="PUNTUALIDAD",
-                descripcion=(
-                    f"Llegada tarde: "
-                    f"{empleado.apellido}, {empleado.nombre} "
-                    f"(Ingreso {fecha_hora_ar.strftime('%H:%M')}, "
-                    f"Turno {hora_turno_str})"
+                        # 🔥 EMPLEADO ESPECÍFICO
+                        AuditLog.descripcion.contains(
+                            f"{empleado.apellido}, {empleado.nombre}"
+                        ),
+
+                        AuditLog.created_at >= inicio_dia.astimezone(timezone.utc),
+
+                        AuditLog.created_at < fin_dia.astimezone(timezone.utc)
+                    )
                 )
-            )
+            ).scalar()
+
+            if not ya_existe:
+                turno = obtener_turno_dia(
+                    empleado,
+                    fecha_hora_ar
+                )
+
+                hora_turno_str = (
+                    turno["inicio"].strftime('%H:%M')
+                    if turno and turno["inicio"]
+                    else "--:--"
+                )
+
+                registrar_evento(
+                    accion="ALERTA",
+                    entidad="PUNTUALIDAD",
+                    descripcion=(
+                        f"Llegada tarde: "
+                        f"{empleado.apellido}, {empleado.nombre} "
+                        f"(Ingreso {fecha_hora_ar.strftime('%H:%M')}, "
+                        f"Turno {hora_turno_str})"
+                    )
+                )
 
     # =========================
     # 💾 GUARDAR ASISTENCIA

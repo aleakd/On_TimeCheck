@@ -139,14 +139,23 @@ def marcar_asistencia():
                 )
                 fin_dia = inicio_dia + timedelta(days=1)
 
-                ya_existe = db.session.query(db.exists().where(
-                    db.and_(
-                        AuditLog.empresa_id == current_user.empresa_id,
-                        AuditLog.entidad == "PUNTUALIDAD",
-                        AuditLog.created_at >= inicio_dia.astimezone(timezone.utc),
-                        AuditLog.created_at < fin_dia.astimezone(timezone.utc)
+                ya_existe = db.session.query(
+                    db.exists().where(
+                        db.and_(
+                            AuditLog.empresa_id == current_user.empresa_id,
+                            AuditLog.entidad == "PUNTUALIDAD",
+
+                            # 🔥 MISMO EMPLEADO
+                            AuditLog.descripcion.contains(
+                                f"{empleado.apellido}, {empleado.nombre}"
+                            ),
+
+                            AuditLog.created_at >= inicio_dia.astimezone(timezone.utc),
+
+                            AuditLog.created_at < fin_dia.astimezone(timezone.utc)
+                        )
                     )
-                )).scalar()
+                ).scalar()
 
                 if not ya_existe:
 

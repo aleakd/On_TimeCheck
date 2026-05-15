@@ -3,8 +3,78 @@ from flask_login import login_required, current_user
 from datetime import datetime, date
 import calendar
 
-from app.models import HorarioEmpleado, Empleado, db
+from app.models import (
+    HorarioEmpleado,
+    HorarioBloque,
+    Empleado,
+    db
+)
 from app.multitenant import empleados_empresa
+
+
+
+def migrar_horario_a_bloques(horario):
+
+    """
+    Compatibilidad temporal:
+    convierte horarios viejos
+    a bloques nuevos automáticamente.
+    """
+
+    # 🔥 ya tiene bloques
+    if horario.bloques:
+        return
+
+    # 🔥 no tiene horarios viejos
+    if not horario.hora_inicio or not horario.hora_fin:
+        return
+
+    bloque = HorarioBloque(
+        horario_id=horario.id,
+        hora_inicio=horario.hora_inicio,
+        hora_fin=horario.hora_fin
+    )
+
+    db.session.add(bloque)
+
+def validar_bloques(bloques):
+
+    """
+    Valida:
+    - inicio < fin
+    - sin superposición
+    """
+
+    bloques_ordenados = sorted(
+        bloques,
+        key=lambda b: b["inicio"]
+    )
+
+    for i, bloque in enumerate(bloques_ordenados):
+
+        inicio = bloque["inicio"]
+        fin = bloque["fin"]
+
+        # 🔥 inicio debe ser menor
+        if inicio >= fin:
+            return False, (
+                "La hora de inicio "
+                "debe ser menor al fin"
+            )
+
+        # 🔥 comparar con siguiente
+        if i < len(bloques_ordenados) - 1:
+
+            siguiente = bloques_ordenados[i + 1]
+
+            if fin > siguiente["inicio"]:
+                return False, (
+                    "Hay bloques superpuestos"
+                )
+
+    return True, None
+
+
 
 horarios_bp = Blueprint(
     "horarios",
@@ -35,6 +105,19 @@ def calendario():
     ).all()
 
     # indexar
+    # ==========================================
+    # 🔥 MIGRAR HORARIOS VIEJOS A BLOQUES
+    # ==========================================
+
+    for h in horarios:
+        migrar_horario_a_bloques(h)
+
+    db.session.commit()
+
+    # ==========================================
+    # INDEXAR
+    # ==========================================
+
     horarios_dict = {
         (h.empleado_id, h.fecha): h
         for h in horarios
@@ -88,20 +171,80 @@ def guardar():
 @login_required
 def aplicar_horario():
 
-    empleado_id = int(request.form.get("empleado_id"))
-    anio = int(request.form.get("anio"))
-    mes = int(request.form.get("mes"))
-
-    hora_inicio = request.form.get("hora_inicio")
-    hora_fin = request.form.get("hora_fin")
-
-    dias_laborales = request.form.getlist("dias")
-    # ej: ["0","1","2","3","4"] → lunes a viernes
-
+    import json
     import calendar
-    from datetime import date, datetime
 
-    _, total_dias = calendar.monthrange(anio, mes)
+    from datetime import (
+        date,
+        datetime
+    )
+
+    empleado_id = int(
+        request.form.get("empleado_id")
+    )
+
+    anio = int(
+        request.form.get("anio")
+    )
+
+    mes = int(
+        request.form.get("mes")
+    )
+
+    dias_laborales = request.form.getlist(
+        "dias"
+    )
+
+    # ==========================================
+    # 🔥 LEER BLOQUES
+    # ==========================================
+
+    bloques_json = request.form.get(
+        "bloques"
+    )
+
+    bloques = json.loads(
+        bloques_json
+    )
+
+    bloques_parseados = []
+
+    for b in bloques:
+
+        inicio = datetime.strptime(
+            b["inicio"],
+            "%H:%M"
+        ).time()
+
+        fin = datetime.strptime(
+            b["fin"],
+            "%H:%M"
+        ).time()
+
+        bloques_parseados.append({
+            "inicio": inicio,
+            "fin": fin
+        })
+
+    # ==========================================
+    # 🔥 VALIDAR BLOQUES
+    # ==========================================
+
+    valido, error = validar_bloques(
+        bloques_parseados
+    )
+
+    if not valido:
+        return error, 400
+
+    # ==========================================
+    # 🔥 RECORRER MES
+    # ==========================================
+
+    _, total_dias = calendar.monthrange(
+        anio,
+        mes
+    )
 
     for d in range(1, total_dias + 1):
 
@@ -112,27 +255,63 @@ def aplicar_horario():
         else:
             tipo = "FRANCO"
 
-        existente = HorarioEmpleado.query.filter_by(
+        horario = HorarioEmpleado.query.filter_by(
             empleado_id=empleado_id,
             fecha=fecha
         ).first()
 
-        if not existente:
-            existente = HorarioEmpleado(
+        if not horario:
+
+            horario = HorarioEmpleado(
                 empleado_id=empleado_id,
-                fecha=fecha
+                fecha=fecha,
+                tipo=tipo
             )
 
-        existente.tipo = tipo
+            db.session.add(horario)
+            db.session.flush()
 
-        if tipo == "TRABAJA":
-            existente.hora_inicio = datetime.strptime(hora_inicio, "%H:%M").time()
-            existente.hora_fin = datetime.strptime(hora_fin, "%H:%M").time()
-        else:
-            existente.hora_inicio = None
-            existente.hora_fin = None
+        horario.tipo = tipo
 
-        db.session.add(existente)
+        # ==========================================
+        # 🔥 LIMPIAR BLOQUES VIEJOS
+        # ==========================================
+
+        horario.bloques.clear()
+
+        # ==========================================
+        # 🔥 SI ES FRANCO
+        # ==========================================
+
+        if tipo != "TRABAJA":
+
+            horario.hora_inicio = None
+            horario.hora_fin = None
+
+            continue
+
+        # ==========================================
+        # 🔥 CREAR BLOQUES
+        # ==========================================
+
+        for b in bloques_parseados:
+
+            bloque = HorarioBloque(
+                horario_id=horario.id,
+                hora_inicio=b["inicio"],
+                hora_fin=b["fin"]
+            )
+
+            db.session.add(bloque)
+
+        # ==========================================
+        # 🔥 COMPATIBILIDAD TEMPORAL
+        # ==========================================
+
+        primer = bloques_parseados[0]
+
+        horario.hora_inicio = primer["inicio"]
+        horario.hora_fin = primer["fin"]
 
     db.session.commit()
 
@@ -142,15 +321,20 @@ def aplicar_horario():
 @login_required
 def editar_dia():
 
+    import json
     from datetime import datetime
 
-    empleado_id = int(request.form.get("empleado_id"))
+    empleado_id = int(
+        request.form.get("empleado_id")
+    )
+
     fecha = request.form.get("fecha")
     tipo = request.form.get("tipo")
-    inicio = request.form.get("inicio")
-    fin = request.form.get("fin")
 
-    fecha_dt = datetime.strptime(fecha, "%Y-%m-%d").date()
+    fecha_dt = datetime.strptime(
+        fecha,
+        "%Y-%m-%d"
+    ).date()
 
     horario = HorarioEmpleado.query.filter_by(
         empleado_id=empleado_id,
@@ -160,19 +344,95 @@ def editar_dia():
     if not horario:
         horario = HorarioEmpleado(
             empleado_id=empleado_id,
-            fecha=fecha_dt
+            fecha=fecha_dt,
+            tipo=tipo
         )
+
+        db.session.add(horario)
+        db.session.flush()
 
     horario.tipo = tipo
 
-    if tipo == "TRABAJA" and inicio and fin:
-        horario.hora_inicio = datetime.strptime(inicio, "%H:%M").time()
-        horario.hora_fin = datetime.strptime(fin, "%H:%M").time()
-    else:
+    # ==========================================
+    # 🔥 LIMPIAR BLOQUES ANTERIORES
+    # ==========================================
+
+    horario.bloques.clear()
+
+    # ==========================================
+    # 🔥 FRANCO / LICENCIA
+    # ==========================================
+
+    if tipo != "TRABAJA":
+
         horario.hora_inicio = None
         horario.hora_fin = None
 
-    db.session.add(horario)
+        db.session.commit()
+
+        return "OK"
+
+    # ==========================================
+    # 🔥 LEER BLOQUES
+    # ==========================================
+
+    bloques_json = request.form.get("bloques")
+
+    bloques = json.loads(bloques_json)
+
+    bloques_parseados = []
+
+    for b in bloques:
+
+        inicio = datetime.strptime(
+            b["inicio"],
+            "%H:%M"
+        ).time()
+
+        fin = datetime.strptime(
+            b["fin"],
+            "%H:%M"
+        ).time()
+
+        bloques_parseados.append({
+            "inicio": inicio,
+            "fin": fin
+        })
+
+    # ==========================================
+    # 🔥 VALIDAR
+    # ==========================================
+
+    valido, error = validar_bloques(
+        bloques_parseados
+    )
+
+    if not valido:
+        return error, 400
+
+    # ==========================================
+    # 🔥 CREAR BLOQUES
+    # ==========================================
+
+    for b in bloques_parseados:
+
+        bloque = HorarioBloque(
+            horario_id=horario.id,
+            hora_inicio=b["inicio"],
+            hora_fin=b["fin"]
+        )
+
+        db.session.add(bloque)
+
+    # ==========================================
+    # 🔥 COMPATIBILIDAD TEMPORAL
+    # ==========================================
+
+    primer = bloques_parseados[0]
+
+    horario.hora_inicio = primer["inicio"]
+    horario.hora_fin = primer["fin"]
+
     db.session.commit()
 
     return "OK"

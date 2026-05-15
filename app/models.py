@@ -222,6 +222,35 @@ class HorarioEmpleado(db.Model):
     empleado = db.relationship("Empleado")
 
 # =========================
+# HORARIOS DEL EMPLEADO BLOQUE
+# ========================
+class HorarioBloque(db.Model):
+
+    __tablename__ = "horario_bloque"
+
+    id = db.Column(db.Integer, primary_key=True)
+    horario_id = db.Column(
+        db.Integer,
+        db.ForeignKey("horario_empleado.id"),
+        nullable=False
+    )
+    hora_inicio = db.Column(
+        db.Time,
+        nullable=False
+    )
+    hora_fin = db.Column(
+        db.Time,
+        nullable=False
+    )
+    horario = db.relationship(
+        "HorarioEmpleado",
+        backref=db.backref(
+            "bloques",
+            cascade="all, delete-orphan",
+            lazy=True
+        )
+    )
+# =========================
 # KIOSCO
 # ========================
 class Kiosco(db.Model):

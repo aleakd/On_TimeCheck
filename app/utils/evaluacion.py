@@ -54,7 +54,20 @@ def evaluar_dia(empleado, fecha, horario, asistencias):
                 "detalle": "No fichó"
             }
 
-        hora_turno = horario.hora_inicio
+        hora_turno = None
+
+        if horario.bloques:
+
+            bloques = sorted(
+                horario.bloques,
+                key=lambda b: b.hora_inicio
+            )
+
+            hora_turno = bloques[0].hora_inicio
+
+        else:
+            # compatibilidad vieja temporal
+            hora_turno = horario.hora_inicio
 
         if hora_turno:
             ingreso_dt = ingreso.replace(

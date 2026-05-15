@@ -17,12 +17,24 @@
 </select>
 </div>
 
-<div class="col-md-2">
-<input type="time" name="hora_inicio" class="form-control" required>
-</div>
+<div class="col-md-4">
 
-<div class="col-md-2">
-<input type="time" name="hora_fin" class="form-control" required>
+    <label class="mb-2">
+        Bloques horarios
+    </label>
+
+    <div id="bloquesMensuales">
+
+    </div>
+
+    <button type="button"
+            class="btn btn-outline-primary btn-sm mt-2"
+            onclick="agregarBloqueMensual()">
+
+        + Agregar bloque
+
+    </button>
+
 </div>
 
 <div class="col-md-4">
@@ -94,6 +106,19 @@ Aplicar
     data-tipo="{{ h.tipo if h else '' }}"
     data-inicio="{{ h.hora_inicio.strftime('%H:%M') if h and h.hora_inicio else '' }}"
     data-fin="{{ h.hora_fin.strftime('%H:%M') if h and h.hora_fin else '' }}"
+    data-bloques='[
+{% if h and h.bloques %}
+
+    {% for b in h.bloques %}
+    {
+        "inicio":"{{ b.hora_inicio.strftime("%H:%M") }}",
+        "fin":"{{ b.hora_fin.strftime("%H:%M") }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+
+{% endif %}
+]'
+
     style="cursor:pointer; min-width:70px;">
 
 <div class="dia-box
@@ -105,7 +130,33 @@ Aplicar
     {% if h %}
         {% if h.tipo == "TRABAJA" %}
             <div class="fw-bold text-success">●</div>
-            <div class="hora">{{ h.hora_inicio.strftime('%H:%M') }}</div>
+            <div class="fw-bold text-success">●</div>
+
+{% if h.bloques %}
+
+    {% for b in h.bloques %}
+
+        <div class="hora small">
+
+            {{ b.hora_inicio.strftime('%H:%M') }}
+            -
+            {{ b.hora_fin.strftime('%H:%M') }}
+
+        </div>
+
+    {% endfor %}
+
+{% elif h.hora_inicio and h.hora_fin %}
+
+    <div class="hora small">
+
+        {{ h.hora_inicio.strftime('%H:%M') }}
+        -
+        {{ h.hora_fin.strftime('%H:%M') }}
+
+    </div>
+
+{% endif %}
         {% elif h.tipo == "FRANCO" %}
             <div class="text-muted">F</div>
         {% elif h.tipo == "LICENCIA" %}
@@ -145,15 +196,25 @@ Aplicar
         </select>
       </div>
 
-      <div class="mb-2">
-        <label>Inicio</label>
-        <input type="time" id="m_inicio" class="form-control">
-      </div>
+      <div class="mb-3">
 
-      <div class="mb-2">
-        <label>Fin</label>
-        <input type="time" id="m_fin" class="form-control">
-      </div>
+    <label class="mb-2">
+        Bloques horarios
+    </label>
+
+    <div id="contenedorBloques">
+
+    </div>
+
+    <button type="button"
+            class="btn btn-outline-primary btn-sm mt-2"
+            onclick="agregarBloque()">
+
+        + Agregar bloque
+
+    </button>
+
+</div>
 
       <button class="btn btn-success w-100" onclick="guardarDia()">
         Guardar
@@ -170,6 +231,38 @@ document.getElementById("formHorario").addEventListener("submit", function(e){
 
     const formData = new FormData(this);
 
+    // ==========================================
+// 🔥 BLOQUES MENSUALES
+// ==========================================
+
+const bloques = [];
+
+document.querySelectorAll(
+    ".bloque-mensual"
+).forEach(b => {
+
+    const inicio = b.querySelector(
+        ".bm-inicio"
+    ).value;
+
+    const fin = b.querySelector(
+        ".bm-fin"
+    ).value;
+
+    if (inicio && fin){
+
+        bloques.push({
+            inicio,
+            fin
+        });
+    }
+});
+
+formData.append(
+    "bloques",
+    JSON.stringify(bloques)
+);
+
     fetch("/horarios/aplicar", {
         method: "POST",
         body: formData
@@ -178,7 +271,6 @@ document.getElementById("formHorario").addEventListener("submit", function(e){
     .then(() => location.reload());
 });
 </script>
-
 <script>
 document.querySelectorAll(".celda-dia").forEach(celda => {
 
@@ -196,8 +288,56 @@ document.querySelectorAll(".celda-dia").forEach(celda => {
         document.getElementById("m_empleado").value = celda.dataset.empleado;
         document.getElementById("m_fecha").value = fecha;
         document.getElementById("m_tipo").value = celda.dataset.tipo || "TRABAJA";
-        document.getElementById("m_inicio").value = celda.dataset.inicio || "";
-        document.getElementById("m_fin").value = celda.dataset.fin || "";
+       // ==========================================
+// 🔥 LIMPIAR BLOQUES
+// ==========================================
+
+document.getElementById(
+    "contenedorBloques"
+).innerHTML = "";
+
+// ==========================================
+// 🔥 BLOQUE INICIAL
+// ==========================================
+
+// ==========================================
+// 🔥 CARGAR BLOQUES EXISTENTES
+// ==========================================
+
+const bloques = JSON.parse(
+    celda.dataset.bloques || "[]"
+);
+
+if (bloques.length > 0){
+
+    bloques.forEach(b => {
+
+        agregarBloque(
+            b.inicio,
+            b.fin
+        );
+
+    });
+
+} else {
+
+    // compatibilidad vieja
+    if (
+        celda.dataset.inicio &&
+        celda.dataset.fin
+    ) {
+
+        agregarBloque(
+            celda.dataset.inicio,
+            celda.dataset.fin
+        );
+
+    } else {
+
+        agregarBloque();
+
+    }
+}
 
         document.getElementById("modalTitulo").innerText = "Editar " + fecha;
 
@@ -206,44 +346,157 @@ document.querySelectorAll(".celda-dia").forEach(celda => {
 
 });
 </script>
-
 <script>
 function guardarDia(){
 
     const data = new FormData();
 
-    data.append("empleado_id", document.getElementById("m_empleado").value);
-    data.append("fecha", document.getElementById("m_fecha").value);
-    data.append("tipo", document.getElementById("m_tipo").value);
-    data.append("inicio", document.getElementById("m_inicio").value);
-    data.append("fin", document.getElementById("m_fin").value);
+    data.append(
+        "empleado_id",
+        document.getElementById("m_empleado").value
+    );
+
+    data.append(
+        "fecha",
+        document.getElementById("m_fecha").value
+    );
+
+    data.append(
+        "tipo",
+        document.getElementById("m_tipo").value
+    );
+
+    // ==========================================
+    // 🔥 BLOQUES
+    // ==========================================
+
+    const bloques = [];
+
+    document.querySelectorAll(
+        ".bloque-item"
+    ).forEach(b => {
+
+        const inicio = b.querySelector(
+            ".bloque-inicio"
+        ).value;
+
+        const fin = b.querySelector(
+            ".bloque-fin"
+        ).value;
+
+        if (inicio && fin){
+
+            bloques.push({
+                inicio,
+                fin
+            });
+        }
+    });
+
+    data.append(
+        "bloques",
+        JSON.stringify(bloques)
+    );
 
     fetch("/horarios/editar-dia", {
         method: "POST",
         body: data
     })
-    .then(() => location.reload());
+    .then(res => {
+
+        if (!res.ok){
+            return res.text().then(
+                err => { throw new Error(err); }
+            );
+        }
+
+        location.reload();
+    })
+    .catch(err => {
+        alert(err.message);
+    });
 }
 </script>
-
 <script>
-const tipoSelect = document.getElementById("m_tipo");
-const inicioInput = document.getElementById("m_inicio");
-const finInput = document.getElementById("m_fin");
 
-tipoSelect.addEventListener("change", () => {
+function agregarBloque(inicio="", fin="") {
 
-    if (tipoSelect.value !== "TRABAJA") {
-        inicioInput.value = "";
-        finInput.value = "";
-        inicioInput.disabled = true;
-        finInput.disabled = true;
-    } else {
-        inicioInput.disabled = false;
-        finInput.disabled = false;
-    }
+    const contenedor = document.getElementById(
+        "contenedorBloques"
+    );
 
-});
+    const bloque = document.createElement("div");
+
+    bloque.className =
+        "d-flex gap-2 mb-2 bloque-item";
+
+    bloque.innerHTML = `
+
+        <input type="time"
+               class="form-control bloque-inicio"
+               value="${inicio}">
+
+        <input type="time"
+               class="form-control bloque-fin"
+               value="${fin}">
+
+        <button type="button"
+                class="btn btn-danger"
+                onclick="this.parentElement.remove()">
+
+            ✕
+
+        </button>
+    `;
+
+    contenedor.appendChild(bloque);
+}
+
+</script>
+<script>
+
+function agregarBloqueMensual(
+    inicio="",
+    fin=""
+){
+
+    const contenedor = document.getElementById(
+        "bloquesMensuales"
+    );
+
+    const bloque = document.createElement("div");
+
+    bloque.className =
+        "d-flex gap-2 mb-2 bloque-mensual";
+
+    bloque.innerHTML = `
+
+        <input type="time"
+               class="form-control bm-inicio"
+               value="${inicio}">
+
+        <input type="time"
+               class="form-control bm-fin"
+               value="${fin}">
+
+        <button type="button"
+                class="btn btn-danger"
+                onclick="this.parentElement.remove()">
+
+            ✕
+
+        </button>
+    `;
+
+    contenedor.appendChild(bloque);
+}
+
+// ==========================================
+// 🔥 BLOQUE INICIAL
+// ==========================================
+
+agregarBloqueMensual();
+
 </script>
 
 {% endblock %}
