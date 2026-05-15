@@ -42,8 +42,8 @@ class Sucursal(db.Model):
         nullable=False
     )
     nombre = db.Column(db.String(100), nullable=False)
-    ip_publica = db.Column(db.String(50), nullable=True)
-    ip_rango = db.Column(db.String(50), nullable=True)
+    ip_publica = db.Column(db.Text, nullable=True)
+    ip_rango = db.Column(db.Text, nullable=True)
     activa = db.Column(db.Boolean, default=True)
 
     empresa = db.relationship(
