@@ -55,6 +55,25 @@ class Sucursal(db.Model):
         back_populates='sucursal',
         lazy=True
     )
+    geo_activa = db.Column(
+        db.Boolean,
+        default=False
+    )
+
+    latitud = db.Column(
+        db.Float,
+        nullable=True
+    )
+
+    longitud = db.Column(
+        db.Float,
+        nullable=True
+    )
+
+    radio_metros = db.Column(
+        db.Integer,
+        default=150
+    )
 
 
 # =========================
@@ -131,6 +150,21 @@ class Asistencia(db.Model):
     )
 
     sucursal = db.relationship('Sucursal')
+
+    latitud = db.Column(
+        db.Float,
+        nullable=True
+    )
+
+    longitud = db.Column(
+        db.Float,
+        nullable=True
+    )
+
+    precision_metros = db.Column(
+        db.Float,
+        nullable=True
+    )
 
     def __repr__(self):
         return f'<Asistencia {self.tipo} - Empleado {self.empleado_id}>'

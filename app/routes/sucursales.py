@@ -52,6 +52,11 @@ def nueva_sucursal():
         ip_publica = request.form.get('ip_publica')
         ip_rango = request.form.get('ip_rango')
 
+        geo_activa = bool(request.form.get("geo_activa"))
+        latitud = request.form.get("latitud") or None
+        longitud = request.form.get("longitud") or None
+        radio_metros = request.form.get("radio_metros") or 150
+
         if not nombre:
             flash("El nombre es obligatorio", "danger")
             return redirect(url_for('sucursales.nueva_sucursal'))
@@ -61,7 +66,11 @@ def nueva_sucursal():
             nombre=nombre,
             ip_publica=ip_publica or None,
             ip_rango=ip_rango or None,
-            activa=True
+            activa=True,
+            geo_activa=geo_activa,
+            latitud=float(latitud) if latitud else None,
+            longitud=float(longitud) if longitud else None,
+            radio_metros=int(radio_metros)
         )
 
         db.session.add(sucursal)
@@ -126,6 +135,11 @@ def editar_sucursal(id):
         ip_publica = request.form.get('ip_publica')
         ip_rango = request.form.get('ip_rango')
 
+        geo_activa = bool(request.form.get("geo_activa"))
+        latitud = request.form.get("latitud") or None
+        longitud = request.form.get("longitud") or None
+        radio_metros = request.form.get("radio_metros") or 150
+
         if not nombre:
             flash("El nombre es obligatorio", "danger")
             return redirect(url_for('sucursales.editar_sucursal', id=id))
@@ -133,6 +147,16 @@ def editar_sucursal(id):
         sucursal.nombre = nombre
         sucursal.ip_publica = ip_publica or None
         sucursal.ip_rango = ip_rango or None
+        sucursal.geo_activa = geo_activa
+        sucursal.latitud = (
+            float(latitud)
+            if latitud else None
+        )
+        sucursal.longitud = (
+            float(longitud)
+            if longitud else None
+        )
+        sucursal.radio_metros = int(radio_metros)
 
         db.session.commit()
 

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.models import db, Asistencia, AuditLog
 from app.multitenant import asistencias_empresa
@@ -7,6 +7,7 @@ from app.security import requiere_ip_empresa
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta, timezone
 from app.services.horarios_service import evaluar_llegada_tarde, obtener_turno_dia
+from app.services.geolocalizacion_service import (ubicacion_permitida)
 
 
 fichaje_bp = Blueprint(
@@ -55,7 +56,7 @@ def home():
 # =====================================================
 # ACCIÓN INGRESO (1 CLICK)
 # =====================================================
-@fichaje_bp.route("/ingreso")
+@fichaje_bp.route("/ingreso", methods=["POST"])
 @login_required
 @requiere_ip_empresa
 def fichar_ingreso():
@@ -64,6 +65,7 @@ def fichar_ingreso():
         return redirect(url_for("main.dashboard"))
 
     empleado_id = current_user.empleado_id
+
 
     ultima = (
         asistencias_empresa()
@@ -78,6 +80,7 @@ def fichar_ingreso():
 
     tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
     empleado = current_user.empleado
+    sucursal = empleado.sucursal
 
     fecha_hora_ar = datetime.now(tz_ar)
 
@@ -164,6 +167,69 @@ def fichar_ingreso():
                     )
                 )
 
+    # ==========================================
+    # VALIDAR GEOLOCALIZACIÓN
+    # ==========================================
+
+    latitud = request.form.get("latitud")
+    longitud = request.form.get("longitud")
+
+    latitud = (
+        float(latitud)
+        if latitud else None
+    )
+
+    longitud = (
+        float(longitud)
+        if longitud else None
+    )
+
+    precision = request.form.get(
+        "precision_metros"
+    )
+
+    precision = (
+        float(precision)
+        if precision else None
+    )
+
+    # ==========================================
+    # PRECISIÓN GPS
+    # ==========================================
+
+    if precision and precision > 200:
+        flash(
+            (
+                "La precisión de tu ubicación "
+                "es demasiado baja. "
+                "Intentá nuevamente."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for("fichaje.home")
+        )
+
+    geo_ok = ubicacion_permitida(
+        sucursal,
+        latitud,
+        longitud
+    )
+
+    if not geo_ok:
+        flash(
+            (
+                "No fue posible validar tu ubicación "
+                "o te encontrás fuera del área permitida."
+            ),
+            "danger"
+        )
+
+        return redirect(
+            url_for("fichaje.home")
+        )
+
     # =========================
     # 💾 GUARDAR ASISTENCIA
     # =========================
@@ -172,7 +238,10 @@ def fichar_ingreso():
         empresa_id=current_user.empresa_id,
         sucursal_id=current_user.empleado.sucursal_id,
         tipo="INGRESO",
-        actividad="FICHAJE_APP"
+        actividad="FICHAJE_APP",
+        latitud=request.form.get("latitud") or None,
+        longitud=request.form.get("longitud") or None,
+        precision_metros=request.form.get("precision_metros") or None
     )
 
     db.session.add(asistencia)
@@ -191,7 +260,7 @@ def fichar_ingreso():
 # =====================================================
 # ACCIÓN SALIDA (1 CLICK)
 # =====================================================
-@fichaje_bp.route("/salida")
+@fichaje_bp.route("/salida", methods=["POST"])
 @requiere_ip_empresa
 @login_required
 def fichar_salida():
@@ -217,7 +286,10 @@ def fichar_salida():
         empresa_id=current_user.empresa_id,
         sucursal_id=current_user.empleado.sucursal_id,
         tipo="SALIDA",
-        actividad="FICHAJE_APP"
+        actividad="FICHAJE_APP",
+        latitud=request.form.get("latitud") or None,
+        longitud=request.form.get("longitud") or None,
+        precision_metros=request.form.get("precision_metros") or None
     )
 
     db.session.add(asistencia)

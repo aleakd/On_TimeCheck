@@ -47,6 +47,107 @@
                    value="{{ sucursal.ip_rango if sucursal else '' }}">
         </div>
 
+
+        <hr>
+
+<h5 class="mb-3">
+    📍 Geolocalización
+</h5>
+
+<div class="form-check form-switch mb-3">
+
+    <input
+        class="form-check-input"
+        type="checkbox"
+        name="geo_activa"
+        id="geo_activa"
+
+        {% if sucursal and sucursal.geo_activa %}
+            checked
+        {% endif %}
+    >
+
+    <label class="form-check-label" for="geo_activa">
+        Activar validación por geolocalización
+    </label>
+
+</div>
+
+
+<div class="row">
+
+    <div class="col-md-4 mb-3">
+
+        <label class="form-label">
+            Latitud
+        </label>
+
+        <input
+            type="text"
+            name="latitud"
+            id="latitud"
+            class="form-control"
+
+            value="{{
+                sucursal.latitud
+                if sucursal else ''
+            }}"
+        >
+
+    </div>
+
+
+    <div class="col-md-4 mb-3">
+
+        <label class="form-label">
+            Longitud
+        </label>
+
+        <input
+            type="text"
+            name="longitud"
+            id="longitud"
+            class="form-control"
+
+            value="{{
+                sucursal.longitud
+                if sucursal else ''
+            }}"
+        >
+
+    </div>
+
+
+    <div class="col-md-4 mb-3">
+
+        <label class="form-label">
+            Radio permitido (metros)
+        </label>
+
+        <input
+            type="number"
+            name="radio_metros"
+            class="form-control"
+
+            value="{{
+                sucursal.radio_metros
+                if sucursal else 150
+            }}"
+        >
+
+    </div>
+
+</div>
+
+
+<button
+    type="button"
+    class="btn btn-outline-primary btn-sm"
+    onclick="usarUbicacionActual()"
+>
+    📍 Usar mi ubicación actual
+</button>
+
         <div class="d-flex justify-content-between">
             <a href="{{ url_for('sucursales.lista_sucursales') }}"
                class="btn btn-secondary">
@@ -61,4 +162,52 @@
     </form>
 
 </div>
+
+<!-- usar ubicacion actual -->
+<script>
+
+function usarUbicacionActual() {
+
+    if (!navigator.geolocation) {
+
+        alert(
+            "Tu navegador no soporta geolocalización"
+        );
+
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(posicion) {
+
+            document.getElementById("latitud").value =
+                posicion.coords.latitude;
+
+            document.getElementById("longitud").value =
+                posicion.coords.longitude;
+
+            alert(
+                "Ubicación obtenida correctamente"
+            );
+        },
+
+        function(error) {
+
+            alert(
+                "No se pudo obtener la ubicación"
+            );
+
+            console.error(error);
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+</script>
 {% endblock %}

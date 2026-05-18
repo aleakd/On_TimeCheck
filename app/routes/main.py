@@ -117,17 +117,27 @@ def dashboard():
         if ahora_ar <= limite:
             continue
 
-        # buscar si ya fichó hoy
-        inicio_dia = ahora_ar.replace(hour=0, minute=0, second=0, microsecond=0)
-        fin_dia = inicio_dia + timedelta(days=1)
+        # buscar ingresos de HOY correctamente en UTC
+
+        inicio_dia_ar = ahora_ar.replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0
+        )
+
+        fin_dia_ar = inicio_dia_ar + timedelta(days=1)
+
+        inicio_utc = inicio_dia_ar.astimezone(timezone.utc)
+        fin_utc = fin_dia_ar.astimezone(timezone.utc)
 
         ingreso = (
             asistencias_empresa()
             .filter(
                 Asistencia.empleado_id == emp.id,
                 Asistencia.tipo == "INGRESO",
-                Asistencia.fecha_hora >= inicio_dia,
-                Asistencia.fecha_hora < fin_dia
+                Asistencia.fecha_hora >= inicio_utc,
+                Asistencia.fecha_hora < fin_utc
             )
             .first()
         )

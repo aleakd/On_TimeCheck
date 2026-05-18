@@ -67,7 +67,8 @@
 
         {% if current_user.is_authenticated %}
         <span class="navbar-text correo_usuario d-none d-lg-block">
-            {{ current_user.email }} | 🏢 {{ g.empresa.nombre }}
+            <h4>
+            {{ current_user.email }} | 🏢 {{ g.empresa.nombre }}</h4>
         </span>
         {% endif %}
 

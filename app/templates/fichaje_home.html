@@ -23,11 +23,55 @@
         <!-- BOTON INGRESO -->
         <div class="col-12 mb-4">
             {% if puede_ingresar %}
-                <a href="{{ url_for('fichaje.fichar_ingreso') }}"
-                   class="btn btn-success w-100 py-5 shadow">
-                    <div style="font-size:32px">🟢 INGRESAR</div>
-                    <div style="font-size:18px">Comenzar jornada</div>
-                </a>
+                <form
+    id="formIngreso"
+    method="POST"
+    action="{{ url_for('fichaje.fichar_ingreso') }}"
+>
+
+    <input
+        type="hidden"
+        name="latitud"
+        id="latitud_ingreso"
+    >
+
+    <input
+        type="hidden"
+        name="longitud"
+        id="longitud_ingreso"
+    >
+
+    <input
+        type="hidden"
+        name="precision_metros"
+        id="precision_ingreso"
+    >
+
+    <button
+        type="button"
+        id="btnIngreso"
+        onclick="
+    obtenerUbicacionYEnviar(
+    'formIngreso',
+    'latitud_ingreso',
+    'longitud_ingreso',
+    'precision_ingreso'
+)
+"
+        class="btn btn-success w-100 py-5 shadow"
+    >
+
+        <div style="font-size:32px">
+            🟢 INGRESAR
+        </div>
+
+        <div style="font-size:18px">
+            Comenzar jornada
+        </div>
+
+    </button>
+
+</form>
             {% else %}
                 <button class="btn btn-success w-100 py-5 shadow" disabled>
                     <div style="font-size:32px">🟢 INGRESAR</div>
@@ -39,11 +83,45 @@
         <!-- BOTON SALIDA -->
         <div class="col-12">
             {% if puede_salir %}
-                <a href="{{ url_for('fichaje.fichar_salida') }}"
-                   class="btn btn-danger w-100 py-5 shadow">
-                    <div style="font-size:32px">🔴 SALIR</div>
-                    <div style="font-size:18px">Finalizar jornada</div>
-                </a>
+                <form
+    method="POST"
+    action="{{ url_for('fichaje.fichar_salida') }}"
+>
+
+    <input
+        type="hidden"
+        name="latitud"
+        id="latitud_salida"
+    >
+
+    <input
+        type="hidden"
+        name="longitud"
+        id="longitud_salida"
+    >
+
+    <input
+        type="hidden"
+        name="precision_metros"
+        id="precision_salida"
+    >
+
+    <button
+        type="submit"
+        class="btn btn-danger w-100 py-5 shadow"
+    >
+
+        <div style="font-size:32px">
+            🔴 SALIR
+        </div>
+
+        <div style="font-size:18px">
+            Finalizar jornada
+        </div>
+
+    </button>
+
+</form>
             {% else %}
                 <button class="btn btn-danger w-100 py-5 shadow" disabled>
                     <div style="font-size:32px">🔴 SALIR</div>
@@ -56,4 +134,69 @@
 
 </div>
 
+
+
+<script>
+
+async function obtenerUbicacionYEnviar(
+    formId,
+    latId,
+    lngId,
+    precisionId
+) {
+
+    const form =
+        document.getElementById(formId);
+
+        const boton = document.getElementById(
+    "btnIngreso"
+);
+
+if (boton) {
+
+    boton.disabled = true;
+}
+
+    if (!navigator.geolocation) {
+
+        form.submit();
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(posicion) {
+
+            document.getElementById(latId).value =
+                posicion.coords.latitude;
+
+            document.getElementById(lngId).value =
+                posicion.coords.longitude;
+
+            document.getElementById(precisionId).value =
+                posicion.coords.accuracy;
+
+            form.submit();
+        },
+
+        function(error) {
+
+            console.error(
+                "Error GEO:",
+                error
+            );
+
+            // permitir fichar igual por ahora
+            form.submit();
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+</script>
 {% endblock %}

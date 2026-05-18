@@ -1,87 +1,216 @@
 {% extends "base.html" %}
 
 {% block content %}
+
 <div class="container mt-4">
 
+    <!-- HEADER -->
+
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Sucursales</h2>
-        <a href="{{ url_for('sucursales.nueva_sucursal') }}" class="btn btn-primary">
-            + Nueva Sucursal
+
+        <div>
+
+            <h2 class="mb-1">
+                🏢 Sucursales
+            </h2>
+
+            <small class="text-muted">
+                Gestión de sedes, IPs, kioscos y geolocalización
+            </small>
+
+        </div>
+
+        <a href="{{ url_for('sucursales.nueva_sucursal') }}"
+           class="btn btn-primary shadow-sm">
+
+            + Nueva sucursal
+
         </a>
+
     </div>
+
 
     {% if sucursales %}
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Nombre</th>
-                    <th>IP Permitida</th>
-                    <th>Rango CIDR</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                    <th>Empleados</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for s in sucursales %}
-                <tr>
-                    <td>
-                        <strong>{{ s.nombre }}</strong>
-                    </td>
-                    <td>
-                        {{ s.ip_publica if s.ip_publica else '-' }}
-                    </td>
-                    <td>
-                        {{ s.ip_rango if s.ip_rango else '-' }}
-                    </td>
-                    <td>
-                        {% if s.activa %}
-                            <span class="badge bg-success">Activa</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Inactiva</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{{ url_for('sucursales.editar_sucursal', id=s.id) }}"
-                           class="btn btn-sm btn-primary">
-                          Editar
-                        </a>
-                       {% set k = kioscos_por_sucursal.get(s.id) %}
 
-{% if k %}
-    <a href="{{ url_for('kiosco.pantalla', token=k.token) }}"
-       class="btn btn-sm btn-success"
-       target="_blank">
-        Abrir kiosco
-    </a>
-{% else %}
-    <a href="{{ url_for('sucursales.crear_kiosco', id=s.id) }}"
-       class="btn btn-sm btn-primary">
-        Crear kiosco
-    </a>
-{% endif %}
-                        <a href="{{ url_for('sucursales.toggle_sucursal', id=s.id) }}"
-                           class="btn btn-sm {% if s.activa %}btn-warning{% else %}btn-success{% endif %}">
-                            {% if s.activa %}
-                                Desactivar
+        <div class="row">
+
+            {% for s in sucursales %}
+
+            <div class="col-md-6 col-xl-4 mb-4">
+
+                <div class="card border-0 shadow-sm h-100">
+
+                    <div class="card-body d-flex flex-column">
+
+                        <!-- TITULO -->
+
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+
+                            <div>
+
+                                <h5 class="mb-1">
+                                    {{ s.nombre }}
+                                </h5>
+
+                                <small class="text-muted">
+
+                                    {{ s.empleados|length }}
+                                    empleados
+
+                                </small>
+
+                            </div>
+
+                            <div>
+
+                                {% if s.activa %}
+                                    <span class="badge bg-success">
+                                        Activa
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        Inactiva
+                                    </span>
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- SEGURIDAD -->
+
+                        <div class="mb-3">
+
+                            <small class="text-muted d-block mb-1">
+                                Seguridad
+                            </small>
+
+                            <div class="small mb-2">
+
+                                <strong>IPs:</strong><br>
+
+                                {% if s.ip_publica %}
+                                    <span class="text-break">
+                                        {{ s.ip_publica }}
+                                    </span>
+                                {% else %}
+                                    -
+                                {% endif %}
+
+                            </div>
+
+                            <div class="small mb-2">
+
+                                <strong>CIDR:</strong><br>
+
+                                {% if s.ip_rango %}
+                                    {{ s.ip_rango }}
+                                {% else %}
+                                    -
+                                {% endif %}
+
+                            </div>
+
+
+                            <div class="small">
+
+                                <strong>Geolocalización:</strong>
+
+                                {% if s.geo_activa %}
+                                    <span class="badge bg-primary">
+                                        📍 Activa
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">
+                                        Desactivada
+                                    </span>
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- KIOSCO -->
+
+                        <div class="mb-3">
+
+                            {% set k = kioscos_por_sucursal.get(s.id) %}
+
+                            {% if k %}
+
+                                <a href="{{ url_for('kiosco.pantalla', token=k.token) }}"
+                                   class="btn btn-success btn-sm w-100"
+                                   target="_blank">
+
+                                    🖥 Abrir kiosco
+
+                                </a>
+
                             {% else %}
-                                Activar
-                            {% endif %}
-                        </a>
-                    </td>
 
-                    <td>{{ s.empleados|length }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-        <div class="alert alert-info">
-            No hay sucursales creadas todavía.
+                                <a href="{{ url_for('sucursales.crear_kiosco', id=s.id) }}"
+                                   class="btn btn-outline-primary btn-sm w-100">
+
+                                    + Crear kiosco
+
+                                </a>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <!-- ACCIONES -->
+
+                        <div class="mt-auto d-grid gap-2">
+
+                            <a href="{{ url_for('sucursales.editar_sucursal', id=s.id) }}"
+                               class="btn btn-primary btn-sm">
+
+                                ⚙ Editar sucursal
+
+                            </a>
+
+                            <a href="{{ url_for('sucursales.toggle_sucursal', id=s.id) }}"
+                               class="btn btn-sm
+                               {% if s.activa %}
+                                    btn-outline-warning
+                               {% else %}
+                                    btn-outline-success
+                               {% endif %}">
+
+                                {% if s.activa %}
+                                    Desactivar
+                                {% else %}
+                                    Activar
+                                {% endif %}
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
         </div>
+
+    {% else %}
+
+        <div class="alert alert-info shadow-sm border-0">
+
+            No hay sucursales creadas todavía.
+
+        </div>
+
     {% endif %}
 
 </div>
+
 {% endblock %}
