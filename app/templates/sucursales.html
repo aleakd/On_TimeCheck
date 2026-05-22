@@ -116,6 +116,37 @@
                             <div class="small">
 
                                 <strong>Geolocalización:</strong>
+                                <div class="small mt-3">
+
+    <strong>Modo:</strong>
+
+    {% if (s.ip_publica or s.ip_rango) and s.geo_activa %}
+
+        <span class="badge bg-dark">
+            🔒 IP + GEO
+        </span>
+
+    {% elif s.ip_publica or s.ip_rango %}
+
+        <span class="badge bg-info text-dark">
+            🌐 Solo IP
+        </span>
+
+    {% elif s.geo_activa %}
+
+        <span class="badge bg-primary">
+            📍 Solo GEO
+        </span>
+
+    {% else %}
+
+        <span class="badge bg-success">
+            🟢 Libre
+        </span>
+
+    {% endif %}
+
+</div>
 
                                 {% if s.geo_activa %}
                                     <span class="badge bg-primary">

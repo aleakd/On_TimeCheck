@@ -11,6 +11,40 @@
         {% endif %}
     </h2>
 
+    <div class="alert alert-light border shadow-sm mt-3">
+
+    <h6 class="mb-2">
+        🔐 Configuración de seguridad
+    </h6>
+
+    <ul class="mb-0 small">
+
+        <li>
+            Si deja IP y GEO vacíos,
+            el fichaje será libre.
+        </li>
+
+        <li>
+            Si configura IP o CIDR,
+            el fichaje solo funcionará
+            desde esa red.
+        </li>
+
+        <li>
+            Si activa geolocalización,
+            el empleado deberá estar
+            dentro del radio permitido.
+        </li>
+
+        <li>
+            Si configura ambas,
+            se exigirán ambas validaciones.
+        </li>
+
+    </ul>
+
+</div>
+
     <form method="POST" class="mt-4">
 
         <div class="mb-3">
@@ -36,7 +70,7 @@
             <input type="text"
                    name="ip_publica"
                    class="form-control"
-                   value="{{ sucursal.ip_publica if sucursal else '' }}">
+                   value="{{ sucursal.ip_publica or '' if sucursal else '' }}"
         </div>
 
         <div class="mb-3">
@@ -44,13 +78,13 @@
             <input type="text"
                    name="ip_rango"
                    class="form-control"
-                   value="{{ sucursal.ip_rango if sucursal else '' }}">
+                   value="{{ sucursal.ip_rango or '' if sucursal else '' }}"
         </div>
 
 
-        <hr>
+        <hr class="my-4">
 
-<h5 class="mb-3">
+<h5 class="mb-3 fw-bold text-primary">
     📍 Geolocalización
 </h5>
 

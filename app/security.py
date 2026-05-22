@@ -13,40 +13,6 @@ def obtener_ip_cliente():
 
     return request.remote_addr
 
-def ip_autorizada_empresa():
-    """
-    Verifica si la IP del cliente está permitida
-    """
-    empresa = current_user.empresa
-
-    # Si la empresa no configuró seguridad → permitir
-    if not empresa.ip_publica and not empresa.ip_rango:
-        return True
-
-    ip_cliente = obtener_ip_cliente()
-
-    try:
-        ip_cliente_obj = ipaddress.ip_address(ip_cliente)
-    except:
-        return False
-
-    # ✔️ Validar IP fija
-    if empresa.ip_publica:
-        if ip_cliente == empresa.ip_publica:
-            return True
-
-    # ✔️ Validar rango CIDR
-    if empresa.ip_rango:
-        try:
-            red = ipaddress.ip_network(empresa.ip_rango, strict=False)
-            if ip_cliente_obj in red:
-                return True
-        except:
-            pass
-
-    return False
-
-
 def ip_autorizada_sucursal():
 
     # Si no tiene empleado asociado → permitir (admin, etc)
@@ -78,8 +44,12 @@ def ip_autorizada_sucursal():
     if sucursal.ip_publica:
 
         ips_permitidas = [
+
             ip.strip()
+
             for ip in sucursal.ip_publica.split(',')
+
+            if ip.strip()
         ]
 
         if ip_cliente in ips_permitidas:
@@ -94,24 +64,78 @@ def ip_autorizada_sucursal():
             pass
 
     return False
+def sucursal_requiere_ip(sucursal):
 
-def requiere_ip_empresa(func):
+    # ==========================================
+    # LIMPIAR IPs
+    # ==========================================
+
+    ip_publica = (
+        sucursal.ip_publica or ""
+    )
+
+    ip_publica = ip_publica.strip()
+
+    # eliminar comas vacías
+    ips = [
+
+        ip.strip()
+
+        for ip in ip_publica.split(",")
+
+        if ip.strip()
+    ]
+
+    # ==========================================
+    # LIMPIAR CIDR
+    # ==========================================
+
+    ip_rango = (
+        sucursal.ip_rango or ""
+    ).strip()
+
+    # ==========================================
+    # VALIDACIÓN FINAL
+    # ==========================================
+
+    return bool(
+        ips
+        or
+        ip_rango
+    )
+def sucursal_requiere_geo(sucursal):
+
+    return bool(
+        sucursal.geo_activa
+        and
+        sucursal.latitud is not None
+        and
+        sucursal.longitud is not None
+    )
+def requiere_validacion_fichaje(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        from app.services.validacion_fichaje_service import (
+            validar_acceso_fichaje
+        )
 
         if current_user.empleado:
+
             sucursal = current_user.empleado.sucursal
 
-            if not sucursal.activa:
-                flash("⛔ La sucursal está inactiva", "danger")
-                return redirect(url_for('reportes.index'))
+            resultado = validar_acceso_fichaje(
+                sucursal=sucursal
+            )
 
-        if not ip_autorizada_sucursal():
-            flash('⛔ No estás conectado a la red autorizada de la sucursal', 'danger')
-            flash(f'🌐 IP detectada: {obtener_ip_cliente()}', 'warning')
+            if not resultado["ok"]:
+                flash(
+                    resultado["mensaje"],
+                    "danger"
+                )
 
-            return redirect(url_for('reportes.index'))
-
+                return redirect(
+                    url_for("fichaje.home")
+                )
         return func(*args, **kwargs)
 
     return wrapper

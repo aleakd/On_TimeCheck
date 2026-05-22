@@ -4,7 +4,7 @@ from app.models import db, Empleado, Asistencia, AuditLog
 from app.multitenant import empleados_empresa, asistencias_empresa
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta, timezone
-from app.security import requiere_ip_empresa
+from app.security import requiere_validacion_fichaje
 from app.audit import registrar_evento
 from app.services.horarios_service import evaluar_llegada_tarde, obtener_turno_dia
 
@@ -18,7 +18,7 @@ asistencias_bp = Blueprint(
 
 @asistencias_bp.route('/', methods=['GET', 'POST'])
 @login_required
-@requiere_ip_empresa
+@requiere_validacion_fichaje
 def marcar_asistencia():
 
     modo_empleado = current_user.rol == 'empleado'

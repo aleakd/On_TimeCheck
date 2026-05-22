@@ -3,7 +3,9 @@ from flask_login import login_required, current_user
 from app.models import db, Asistencia, AuditLog
 from app.multitenant import asistencias_empresa
 from app.audit import registrar_evento
-from app.security import requiere_ip_empresa
+from app.services.validacion_fichaje_service import (
+    validar_acceso_fichaje
+)
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta, timezone
 from app.services.horarios_service import evaluar_llegada_tarde, obtener_turno_dia
@@ -58,7 +60,7 @@ def home():
 # =====================================================
 @fichaje_bp.route("/ingreso", methods=["POST"])
 @login_required
-@requiere_ip_empresa
+
 def fichar_ingreso():
 
     if current_user.rol not in ["empleado", "supervisor"]:
@@ -211,18 +213,21 @@ def fichar_ingreso():
             url_for("fichaje.home")
         )
 
-    geo_ok = ubicacion_permitida(
-        sucursal,
-        latitud,
-        longitud
+    # ==========================================
+    # VALIDACIÓN CENTRAL
+    # ==========================================
+
+    resultado_validacion = validar_acceso_fichaje(
+
+        sucursal=sucursal,
+
+        latitud=latitud,
+        longitud=longitud
     )
 
-    if not geo_ok:
+    if not resultado_validacion["ok"]:
         flash(
-            (
-                "No fue posible validar tu ubicación "
-                "o te encontrás fuera del área permitida."
-            ),
+            resultado_validacion["mensaje"],
             "danger"
         )
 
@@ -261,8 +266,8 @@ def fichar_ingreso():
 # ACCIÓN SALIDA (1 CLICK)
 # =====================================================
 @fichaje_bp.route("/salida", methods=["POST"])
-@requiere_ip_empresa
 @login_required
+
 def fichar_salida():
 
     if current_user.rol not in ["empleado", "supervisor"]:

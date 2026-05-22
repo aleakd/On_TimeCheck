@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from app.models import db, Empleado, Asistencia, AuditLog, Kiosco
 from app.multitenant import empleados_empresa, asistencias_empresa
-from app.security import requiere_ip_empresa
+from app.security import requiere_validacion_fichaje
 from app.audit import registrar_evento
 from app.services.horarios_service import evaluar_llegada_tarde, obtener_turno_dia
 
@@ -21,7 +21,7 @@ kiosco_bp = Blueprint(
 # ==========================================
 @kiosco_bp.route("/<token>")
 @login_required
-@requiere_ip_empresa
+@requiere_validacion_fichaje
 def pantalla(token):
     kiosco = Kiosco.query.filter_by(
         token=token,
@@ -43,7 +43,7 @@ def pantalla(token):
 # ==========================================
 @kiosco_bp.route("/<token>/fichar", methods=["POST"])
 @login_required
-@requiere_ip_empresa
+@requiere_validacion_fichaje
 def fichar(token):
     kiosco = Kiosco.query.filter_by(
         token=token,

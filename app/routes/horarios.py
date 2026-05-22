@@ -129,7 +129,8 @@ def calendario():
         dias=dias,
         horarios=horarios_dict,
         mes=mes,
-        anio=año
+        anio=año,
+        today=date.today()
     )
 
 @horarios_bp.route("/guardar", methods=["POST"])

@@ -51,6 +51,39 @@ def nueva_sucursal():
         nombre = request.form.get('nombre')
         ip_publica = request.form.get('ip_publica')
         ip_rango = request.form.get('ip_rango')
+        # ==========================================
+        # LIMPIAR CAMPOS IP
+        # ==========================================
+
+        ip_publica = (
+                ip_publica or ""
+        ).strip()
+
+        ip_rango = (
+                ip_rango or ""
+        ).strip()
+
+        # eliminar comas vacías
+        ips_limpias = [
+
+            ip.strip()
+
+            for ip in ip_publica.split(",")
+
+            if ip.strip()
+        ]
+
+        ip_publica = (
+            ",".join(ips_limpias)
+            if ips_limpias
+            else None
+        )
+
+        ip_rango = (
+            ip_rango
+            if ip_rango
+            else None
+        )
 
         geo_activa = bool(request.form.get("geo_activa"))
         latitud = request.form.get("latitud") or None
@@ -134,6 +167,39 @@ def editar_sucursal(id):
         nombre = request.form.get('nombre')
         ip_publica = request.form.get('ip_publica')
         ip_rango = request.form.get('ip_rango')
+        # ==========================================
+        # LIMPIAR CAMPOS IP
+        # ==========================================
+
+        ip_publica = (
+                ip_publica or ""
+        ).strip()
+
+        ip_rango = (
+                ip_rango or ""
+        ).strip()
+
+        # eliminar comas vacías
+        ips_limpias = [
+
+            ip.strip()
+
+            for ip in ip_publica.split(",")
+
+            if ip.strip()
+        ]
+
+        ip_publica = (
+            ",".join(ips_limpias)
+            if ips_limpias
+            else None
+        )
+
+        ip_rango = (
+            ip_rango
+            if ip_rango
+            else None
+        )
 
         geo_activa = bool(request.form.get("geo_activa"))
         latitud = request.form.get("latitud") or None
