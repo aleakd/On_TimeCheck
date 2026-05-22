@@ -22,6 +22,7 @@
                     <th>Apellido</th>
                     <th>Nombre</th>
                     <th>Sucursal</th>
+                    <th>Puesto</th>
                     <th>Usuario</th>
                     <th>Estado</th>
                     <th>Asignado</th>
@@ -38,6 +39,15 @@
                     <td>{{ e.apellido }}</td>
                     <td>{{ e.nombre }}</td>
                     <td>{{ e.sucursal.nombre }}</td>
+                    <td>{% if e.puesto %}
+                    <span class="badge bg-{{ e.puesto.color }}">
+                    {{ e.puesto.nombre }}
+                    </span>
+                     {% else %}
+                     <span class="text-muted">—
+                     </span>
+                    {% endif %}
+                    </td>
                     <td>
                      {% set u = usuarios_por_empleado.get(e.id) %}
                      {% if u %}

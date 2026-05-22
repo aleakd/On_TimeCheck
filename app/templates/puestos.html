@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="mb-1">
+                🧩 Puestos
+            </h2>
+
+            <small class="text-muted">
+                Gestión de roles operativos
+            </small>
+
+        </div>
+
+        <a href="{{ url_for('puestos.nuevo_puesto') }}"
+           class="btn btn-primary">
+
+            + Nuevo puesto
+
+        </a>
+
+    </div>
+
+
+    <div class="card shadow-sm border-0">
+
+        <div class="card-body">
+
+            {% if puestos %}
+
+            <div class="table-responsive">
+
+                <table class="table align-middle">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>Nombre</th>
+
+                            <th>Color</th>
+
+                            <th>Estado</th>
+
+                            <th>Acciones</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for p in puestos %}
+
+                        <tr>
+
+                            <td>
+
+                                <span class="badge bg-{{ p.color }}">
+                                    {{ p.nombre }}
+                                </span>
+
+                            </td>
+
+                            <td>
+                                {{ p.color }}
+                            </td>
+
+                            <td>
+
+                                {% if p.activo %}
+
+                                    <span class="badge bg-success">
+                                        Activo
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-secondary">
+                                        Inactivo
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                <a href="{{ url_for('puestos.editar_puesto', id=p.id) }}"
+                                   class="btn btn-sm btn-primary">
+
+                                    Editar
+
+                                </a>
+
+                                <a href="{{ url_for('puestos.toggle_puesto', id=p.id) }}"
+                                   class="btn btn-sm
+                                   {% if p.activo %}
+                                        btn-outline-danger
+                                   {% else %}
+                                        btn-outline-success
+                                   {% endif %}">
+
+                                    {% if p.activo %}
+                                        Desactivar
+                                    {% else %}
+                                        Activar
+                                    {% endif %}
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            {% else %}
+
+                <div class="alert alert-info mb-0">
+
+                    No hay puestos creados todavía.
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

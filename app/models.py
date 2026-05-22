@@ -75,6 +75,50 @@ class Sucursal(db.Model):
         default=150
     )
 
+# =========================
+# PUESTOS / ROLES OPERATIVOS
+# =========================
+class Puesto(db.Model):
+
+    __tablename__ = 'puesto'
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey('empresa.id'),
+        nullable=False
+    )
+
+    nombre = db.Column(
+        db.String(50),
+        nullable=False
+    )
+
+    color = db.Column(
+        db.String(20),
+        default='primary'
+    )
+
+    activo = db.Column(
+        db.Boolean,
+        default=True
+    )
+
+    empresa = db.relationship(
+        'Empresa',
+        backref=db.backref(
+            'puestos',
+            lazy=True
+        )
+    )
+
+    def __repr__(self):
+
+        return f'<Puesto {self.nombre}>'
 
 # =========================
 # EMPLEADO
@@ -106,6 +150,15 @@ class Empleado(db.Model):
     tolerancia_minutos = db.Column(
         db.Integer,
         default=15
+    )
+    puesto_id = db.Column(
+        db.Integer,
+        db.ForeignKey('puesto.id'),
+        nullable=True
+    )
+
+    puesto = db.relationship(
+        'Puesto'
     )
 
     def __repr__(self):

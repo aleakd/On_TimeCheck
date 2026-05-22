@@ -102,6 +102,9 @@ def create_app():
     from app.routes.horarios import horarios_bp
     app.register_blueprint(horarios_bp)
 
+    from app.routes.puestos import puestos_bp
+    app.register_blueprint(puestos_bp)
+
     # -------------------------------------------------------------------------------------------------------
     # 🔑 CREAR TABLAS SI NO EXISTEN
     with app.app_context():

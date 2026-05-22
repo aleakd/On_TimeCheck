@@ -1,6 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from app.models import Empleado, db, Sucursal, Usuario
+from app.models import (
+    Empleado,
+    db,
+    Sucursal,
+    Usuario,
+    Puesto
+)
 from app.multitenant import empleados_empresa
 from app.roles import solo_admin, admin_o_supervisor
 from app.audit import registrar_evento
@@ -49,7 +55,10 @@ def nuevo_empleado():
         empresa_id=current_user.empresa_id,
         activa=True
     ).all()
-
+    puestos = Puesto.query.filter_by(
+        empresa_id=current_user.empresa_id,
+        activo=True
+    ).order_by(Puesto.nombre).all()
 
 
     if request.method == 'POST':
@@ -60,6 +69,10 @@ def nuevo_empleado():
         turno_fin = request.form.get('turno_fin') or None
         tolerancia_minutos = request.form.get('tolerancia_minutos') or 15
         sucursal_id = request.form.get('sucursal_id')
+        puesto_id = (
+            request.form.get('puesto_id')
+            or None
+        )
 
         if not dni or not apellido or not nombre or not sucursal_id:
             flash('Todos los campos son obligatorios', 'danger')
@@ -98,7 +111,8 @@ def nuevo_empleado():
             activo=True,
             turno_inicio=turno_inicio,
             turno_fin=turno_fin,
-            tolerancia_minutos=tolerancia_minutos
+            tolerancia_minutos=tolerancia_minutos,
+            puesto_id=puesto_id
         )
 
         db.session.add(empleado)
@@ -115,7 +129,8 @@ def nuevo_empleado():
 
     return render_template(
         'empleado_form.html',
-        sucursales=sucursales
+        sucursales=sucursales,
+        puestos=puestos
     )
 
 # =========================
@@ -125,15 +140,17 @@ def nuevo_empleado():
 @login_required
 @admin_o_supervisor
 def editar_empleado(id):
-
     empleado = empleados_empresa().filter_by(id=id).first_or_404()
-
     from app.models import Sucursal, Asistencia, Usuario
 
     sucursales = Sucursal.query.filter_by(
         empresa_id=current_user.empresa_id,
         activa=True
     ).all()
+    puestos = Puesto.query.filter_by(
+        empresa_id=current_user.empresa_id,
+        activo=True
+    ).order_by(Puesto.nombre).all()
 
     if request.method == 'POST':
 
@@ -141,6 +158,10 @@ def editar_empleado(id):
         apellido = request.form.get('apellido')
         nombre = request.form.get('nombre')
         nueva_sucursal_id = int(request.form.get('sucursal_id'))
+        puesto_id = (
+            request.form.get('puesto_id')
+            or None
+        )
 
         turno_inicio = request.form.get('turno_inicio') or None
         turno_fin = request.form.get('turno_fin') or None
@@ -173,6 +194,7 @@ def editar_empleado(id):
         empleado.turno_inicio = turno_inicio
         empleado.turno_fin = turno_fin
         empleado.tolerancia_minutos = int(tolerancia_minutos)
+        empleado.puesto_id = puesto_id
 
         db.session.commit()
 
@@ -241,7 +263,8 @@ def editar_empleado(id):
         "empleado_form.html",
         empleado=empleado,
         sucursales=sucursales,
-        usuario=usuario
+        usuario=usuario,
+        puestos=puestos
     )
 
 

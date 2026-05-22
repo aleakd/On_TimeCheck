@@ -55,6 +55,35 @@
             </select>
         </div>
 
+        <div class="mb-3">
+
+    <label>Puesto</label>
+    <select
+        name="puesto_id"
+        class="form-select"
+    >
+        <option value="">
+            Sin puesto asignado
+        </option>
+        {% for p in puestos %}
+            <option
+                value="{{ p.id }}"
+                {% if empleado and empleado.puesto_id == p.id %}
+                    selected
+                {% endif %}
+            >
+                {{ p.nombre }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <small class="text-muted">
+        Opcional. Permite organizar
+        empleados por sector o función.
+    </small>
+
+</div>
+
 
         <hr>
 

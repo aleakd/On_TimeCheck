@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2>
+
+        {% if puesto %}
+            Editar puesto
+        {% else %}
+            Nuevo puesto
+        {% endif %}
+
+    </h2>
+
+
+    <form method="POST" class="mt-4">
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Nombre
+            </label>
+
+            <input
+                type="text"
+                name="nombre"
+                class="form-control"
+
+                value="{{
+                    puesto.nombre
+                    if puesto else ''
+                }}"
+
+                required
+            >
+
+        </div>
+
+
+        <div class="mb-4">
+
+            <label class="form-label">
+                Color
+            </label>
+
+            <select
+                name="color"
+                class="form-select"
+            >
+
+                {% set color_actual = puesto.color if puesto else 'primary' %}
+
+                <option value="primary"
+                    {% if color_actual == 'primary' %}selected{% endif %}>
+                    Azul
+                </option>
+
+                <option value="success"
+                    {% if color_actual == 'success' %}selected{% endif %}>
+                    Verde
+                </option>
+
+                <option value="danger"
+                    {% if color_actual == 'danger' %}selected{% endif %}>
+                    Rojo
+                </option>
+
+                <option value="warning"
+                    {% if color_actual == 'warning' %}selected{% endif %}>
+                    Amarillo
+                </option>
+
+                <option value="dark"
+                    {% if color_actual == 'dark' %}selected{% endif %}>
+                    Negro
+                </option>
+
+                <option value="secondary"
+                    {% if color_actual == 'secondary' %}selected{% endif %}>
+                    Gris
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="d-flex justify-content-between">
+
+            <a href="{{ url_for('puestos.lista_puestos') }}"
+               class="btn btn-secondary">
+
+                Cancelar
+
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+
+                Guardar
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}
