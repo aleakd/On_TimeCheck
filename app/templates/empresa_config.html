@@ -2,65 +2,243 @@
 {% block title %}Configuracion/Empresa{% endblock %}
 {% block content %}
 
-<h2 class="mb-4">🏢 Configuración de Empresa</h2>
 
-<h5 class="mb-4">🌐 Tu IP actual: {{ ip_actual }}</h5>
+<div class="container-fluid">
 
-<a href="{{ url_for('sucursales.lista_sucursales') }}"
-           class="btn btn-success w-100 p-3">Sucursales</a>
-<div class="card shadow-sm">
-    <div class="card-body">
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
 
-        <form method="post">
+        <div>
 
-            <div class="mb-3">
-                <label class="form-label">Nombre de la empresa</label>
-                <input type="text"
-                       name="nombre"
-                       class="form-control"
-                       value="{{ empresa.nombre }}"
-                       required>
-            </div>
+            <h2 class="fw-bold mb-1">
+                🏢 Configuración de Empresa
+            </h2>
 
-            <hr>
-<!--
-            <h5 class="mb-3">🔐 Seguridad de red</h5>
+            <p class="text-muted mb-0">
 
-            <div class="mb-3">
-                <label class="form-label">IP pública permitida</label>
-                <input type="text"
-                       name="ip_publica"
-                       class="form-control"
-                       placeholder="Ej: 181.45.22.10"
-                       value="{{ empresa.ip_publica or '' }}">
-                <small class="text-muted">
-                    Usar si la empresa tiene IP fija
-                </small>
-            </div>
+                Gestioná la estructura principal
+                y configuraciones generales.
 
-            <div class="mb-3">
-                <label class="form-label">Rango IP permitido (CIDR)</label>
-                <input type="text"
-                       name="ip_rango"
-                       class="form-control"
-                       placeholder="Ej: 181.45.22.0/24"
-                       value="{{ empresa.ip_rango or '' }}">
-                <small class="text-muted">
-                    Ideal si el proveedor cambia la IP frecuentemente
-                </small>
-            </div>
+            </p>
 
-            <div class="alert alert-info">
-                💡 Si ambos campos quedan vacíos, las asistencias podrán marcarse desde cualquier lugar.
-            </div>
-!-->
-            <button class="btn btn-primary">
-                Guardar configuración
-            </button>
+        </div>
 
-        </form>
+        <div class="today-pill">
+
+            🌐 IP actual:
+            <strong>{{ ip_actual }}</strong>
+
+        </div>
 
     </div>
+
+
+    <!-- RESUMEN -->
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-4">
+
+            <div class="card border-0 shadow-sm h-100">
+
+                <div class="card-body">
+
+                    <small class="text-muted">
+                        Empresa
+                    </small>
+
+                    <h4 class="fw-bold mt-2 mb-0">
+                        {{ empresa.nombre }}
+                    </h4>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="card border-0 shadow-sm h-100">
+
+                <div class="card-body">
+
+                    <small class="text-muted">
+                        Seguridad
+                    </small>
+
+                    <h5 class="fw-semibold mt-2 mb-0">
+
+                        GEO + IP habilitables
+
+                    </h5>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="card border-0 shadow-sm h-100">
+
+                <div class="card-body">
+
+                    <small class="text-muted">
+                        Estado del sistema
+                    </small>
+
+                    <h5 class="fw-semibold text-success mt-2 mb-0">
+
+                        Operativo
+
+                    </h5>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ACCESOS -->
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-4">
+
+            <a href="{{ url_for('sucursales.lista_sucursales') }}"
+               class="config-shortcut">
+
+                <div>
+
+                    <h5>
+                        🌐 Sucursales
+                    </h5>
+
+                    <small>
+
+                        Gestioná sedes y validaciones.
+
+                    </small>
+
+                </div>
+
+                <span>
+                    →
+                </span>
+
+            </a>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <a href="/puestos"
+               class="config-shortcut">
+
+                <div>
+
+                    <h5>
+                        🧩 Puestos
+                    </h5>
+
+                    <small>
+
+                        Organizá sectores y funciones.
+
+                    </small>
+
+                </div>
+
+                <span>
+                    →
+                </span>
+
+            </a>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <a href="/usuarios"
+               class="config-shortcut">
+
+                <div>
+
+                    <h5>
+                        🔐 Usuarios
+                    </h5>
+
+                    <small>
+
+                        Administrá accesos y permisos.
+
+                    </small>
+
+                </div>
+
+                <span>
+                    →
+                </span>
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- FORM -->
+    <div class="card border-0 shadow-sm">
+
+        <div class="card-body p-4">
+
+            <div class="mb-4">
+
+                <h4 class="fw-bold mb-1">
+                    Información general
+                </h4>
+
+                <small class="text-muted">
+
+                    Datos principales de la empresa.
+
+                </small>
+
+            </div>
+
+            <form method="post">
+
+                <div class="mb-4">
+
+                    <label class="form-label">
+                        Nombre de la empresa
+                    </label>
+
+                    <input type="text"
+                           name="nombre"
+                           class="form-control form-control-lg"
+                           value="{{ empresa.nombre }}"
+                           required>
+
+                </div>
+
+                <button class="btn btn-primary px-4">
+
+                    Guardar configuración
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
 </div>
+
+
 
 {% endblock %}

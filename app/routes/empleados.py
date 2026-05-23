@@ -73,7 +73,25 @@ def nuevo_empleado():
             request.form.get('puesto_id')
             or None
         )
+        usuario_email = (
+            request.form.get('usuario_email')
+            or ''
+        ).strip().lower()
 
+        usuario_password = (
+            request.form.get('usuario_password')
+            or ''
+        ).strip()
+
+        usuario_rol = (
+            request.form.get('usuario_rol')
+            or 'empleado'
+        ).strip()
+
+        crear_usuario = (
+            request.form.get('usuario_email')
+            and request.form.get('usuario_password')
+        )
         if not dni or not apellido or not nombre or not sucursal_id:
             flash('Todos los campos son obligatorios', 'danger')
             return redirect(url_for('empleados.nuevo_empleado'))
@@ -91,6 +109,31 @@ def nuevo_empleado():
         # Validar DNI dentro de la empresa
         existe = empleados_empresa().filter_by(dni=dni).first()
         if existe:
+            if crear_usuario:
+
+                existe_email = Usuario.query.filter_by(
+                    email=usuario_email
+                ).first()
+
+                if existe_email:
+                    flash(
+                        'Ya existe un usuario con ese email',
+                        'warning'
+                    )
+
+                    return redirect(
+                        url_for('empleados.nuevo_empleado')
+                    )
+
+            if crear_usuario and len(usuario_password) < 6:
+                flash(
+                    'La contraseña debe tener al menos 6 caracteres',
+                    'warning'
+                )
+
+                return redirect(
+                    url_for('empleados.nuevo_empleado')
+                )
             flash('Ya existe un empleado con ese DNI', 'warning')
             return redirect(url_for('empleados.nuevo_empleado'))
 
@@ -117,6 +160,35 @@ def nuevo_empleado():
 
         db.session.add(empleado)
         db.session.commit()
+
+        # =====================================
+        # CREAR USUARIO OPCIONAL
+        # =====================================
+
+        if crear_usuario:
+
+            if usuario_rol not in [
+                'empleado',
+                'supervisor'
+            ]:
+                usuario_rol = 'empleado'
+
+            nuevo_usuario = Usuario(
+                empresa_id=current_user.empresa_id,
+                empleado_id=empleado.id,
+                email=usuario_email,
+                rol=usuario_rol,
+                activo=True
+            )
+
+            nuevo_usuario.password_hash = (
+                generate_password_hash(
+                    usuario_password
+                )
+            )
+
+            db.session.add(nuevo_usuario)
+            db.session.commit()
 
         registrar_evento(
             accion="CREAR",

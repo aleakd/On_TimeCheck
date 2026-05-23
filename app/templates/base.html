@@ -30,53 +30,53 @@
 
 {% if not modo_kiosco %}
 <!-- NAVBAR SUPERIOR -->
-<nav class="navbar nave shadow-sm">
+<nav class="navbar mobile-navbar d-lg-none">
     <div class="container-fluid px-3">
 
-        <a class="navbar-brand brand-otc" href="{{ url_for('main.dashboard') }}">
-            <img src="{{ url_for('static', filename='img/logocorpo.png') }}" alt="logo">
-            <span class="titulo">
-                OnTime<span class="brand-accent">Check</span>
-            </span>
-
-        </a>
-
-        <div class="d-none d-lg-flex align-items-center gap-4 menu">
-
-            {% if current_user.rol in ['empleado','supervisor'] %}
-                <a href="/fichaje" class="nav-link">🕒 Fichaje</a>
-                <a href="/cambiar-password" class="nav-link">🕒 Contraseña</a>
-             {% endif %}
-
-            {% if current_user.rol in ['admin','supervisor'] %}
-                <a href="/reportes" class="nav-link">📊 Reportes</a>
-                <a href="/asistencias" class="nav-link">🕒 Asistencias</a>
-             {% endif %}
-
-            {% if current_user.rol == 'admin' %}
-                <a href="/empleados" class="nav-link">👥 Gestion de usuarios</a>
-                <a href="/auditoria" class="nav-link">🧾 Auditoría</a>
-                <a href="/empresa/configuracion" class="nav-link">🏢 Empresa</a>
-
-            {% endif %}
+        <div class="mobile-navbar-brand">
 
 
 
-            <a href="/logout" class="nav-link text-danger fw-semibold">Salir</a>
-        </div>
+    <div class="mobile-navbar-info">
 
-        {% if current_user.is_authenticated %}
-        <span class="navbar-text correo_usuario d-none d-lg-block">
-            <h4>
-            {{ current_user.email }} | 🏢 {{ g.empresa.nombre }}</h4>
-        </span>
-        {% endif %}
+        <small style="">
+            OnTimeCheck
+        </small>
 
-        <button class="navbar-toggler d-lg-none" type="button"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#menuLateral">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <strong>
+            {{ g.empresa.nombre }}
+        </strong>
+
+    </div>
+
+</div>
+
+
+
+    {% if current_user.is_authenticated %}
+
+    <div class="mobile-user d-lg-none">
+
+
+
+    </div>
+
+    {% endif %}
+
+    <button class="navbar-toggler d-lg-none"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#menuLateral">
+
+        <span class="navbar-toggler-icon"></span>
+
+    </button>
+
+</div>
+
+
+
+
 
     </div>
 </nav>
@@ -84,73 +84,403 @@
 
 <!-- MENU LATERAL -->
 <div class="offcanvas offcanvas-start bg-dark text-light" tabindex="-1" id="menuLateral">
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title">Menú</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-    </div>
+   <div class="offcanvas-header border-bottom border-secondary">
 
-    <div class="offcanvas-body">
+    <div class="d-flex align-items-center gap-3">
 
-        {% if current_user.is_authenticated %}
+        <img src="{{ url_for('static', filename='img/logocorpo.png') }}"
+             width="42"
+             height="42"
+             class="rounded-4">
 
-            <p class="small">
-                {{ current_user.email }} <br>
-                🏢 {{ g.empresa.nombre }}
-            </p>
+        <div>
 
-            <hr>
-            <!-- empleado -->
-            {% if current_user.rol in ['supervisor','empleado'] %}
-                <a href="/fichaje" class="btn btn-outline-light w-100 mb-2">🕒 Fichaje</a>
+            <h5 class="mb-0 fw-bold">
+                OnTimeCheck
+            </h5>
 
-            {% endif %}
+            <small class="text-light opacity-75">
 
-            <!-- ADMIN Y SUPERVISOR -->
-            {% if current_user.rol in ['admin','supervisor'] %}
-                <a href="/asistencias" class="btn btn-outline-light w-100 mb-2">🕒 Asistencias</a>
-                <a href="/reportes" class="btn btn-outline-light w-100 mb-2">📊 Reportes</a>
+                {{ g.empresa.nombre }}
 
-            {% endif %}
+            </small>
 
-            <!-- SOLO ADMIN -->
-            {% if current_user.rol == 'admin' %}
-                <a href="/empleados" class="btn btn-outline-light w-100 mb-2">👥 Empleados</a>
-                <a href="/auditoria" class="btn btn-outline-light w-100 mb-2">🧾 Auditoría</a>
-                <a href="/usuarios" class="btn btn-outline-light w-100 mb-2">🔐 Usuarios</a>
-                <a href="/empresa/configuracion" class="btn btn-outline-light w-100 mb-2">🏢 Empresa</a>
-            {% endif %}
-
-            <hr>
-            <a href="/logout" class="btn btn-danger w-100">Salir</a>
-
-        {% endif %}
-
-    </div>
-</div>
-
-
-<main class="main-container">
-
-    <div class="container">
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show mt-3">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <div class="mt-4">
-            {% block content %}{% endblock %}
         </div>
 
     </div>
 
-</main>
+    <button type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="offcanvas">
+
+    </button>
+
+</div>
+
+
+<div class="offcanvas-body d-flex flex-column">
+
+    {% if current_user.is_authenticated %}
+
+    <!-- USER -->
+    <div class="mobile-user-card">
+
+        <small class="opacity-75">
+            Usuario conectado
+        </small>
+
+        <div class="fw-semibold mt-1">
+            {{ current_user.email }}
+        </div>
+
+    </div>
+
+
+    <!-- OPERACION -->
+    <div class="mobile-section">
+
+        <small class="mobile-section-title">
+            OPERACIÓN
+        </small>
+
+        <a href="{{ url_for('main.dashboard') }}"
+           class="mobile-link">
+
+            📊 Dashboard
+
+        </a>
+
+        <a href="/fichaje"
+           class="mobile-link">
+
+            🕒 Fichaje
+
+        </a>
+
+        <a href="/asistencias"
+           class="mobile-link">
+
+            📋 Asistencias
+
+        </a>
+
+        <a href="/reportes"
+           class="mobile-link">
+
+            📈 Reportes
+
+        </a>
+
+    </div>
+
+
+    {% if current_user.rol == 'admin' %}
+
+    <!-- PERSONAL -->
+    <div class="mobile-section">
+
+        <small class="mobile-section-title">
+            PERSONAL
+        </small>
+
+        <a href="/empleados"
+           class="mobile-link">
+
+            👥 Empleados
+
+        </a>
+
+        <a href="/puestos"
+           class="mobile-link">
+
+            🧩 Puestos
+
+        </a>
+
+        <a href="/usuarios"
+           class="mobile-link">
+
+            🔐 Usuarios
+
+        </a>
+
+    </div>
+
+
+    <!-- CONFIG -->
+    <div class="mobile-section">
+
+        <small class="mobile-section-title">
+            CONFIGURACIÓN
+        </small>
+
+        <a href="/empresa/configuracion"
+           class="mobile-link">
+
+            🏢 Empresa
+
+        </a>
+
+        <a href="/sucursales"
+           class="mobile-link">
+
+            🌐 Sucursales
+
+        </a>
+
+    </div>
+
+
+    <!-- SISTEMA -->
+    <div class="mobile-section">
+
+        <small class="mobile-section-title">
+            SISTEMA
+        </small>
+
+        <a href="/auditoria"
+           class="mobile-link">
+
+            🧾 Auditoría
+
+        </a>
+
+    </div>
+
+    {% endif %}
+
+
+    <!-- LOGOUT -->
+    <div class="mt-auto pt-4">
+
+        <a href="/logout"
+           class="mobile-link logout-mobile">
+
+            🚪 Salir
+
+        </a>
+
+    </div>
+
+    {% endif %}
+
+</div>
+</div>
+
+
+<div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar d-none d-lg-flex">
+
+        <div class="sidebar-inner">
+
+            <div class="sidebar-brand">
+
+                <img src="{{ url_for('static', filename='img/logocorpo.png') }}"
+                     alt="logo">
+
+                <h4>
+                    OnTimeCheck
+                </h4>
+
+            </div>
+
+
+            {% if current_user.is_authenticated %}
+
+            <div class="sidebar-user">
+
+                <small>
+                    {{ current_user.email }}
+                </small>
+
+                <span>
+                    🏢 {{ g.empresa.nombre }}
+                </span>
+
+            </div>
+
+            {% endif %}
+
+
+           <!-- OPERACION -->
+<div class="sidebar-section">
+
+    <small class="sidebar-title">
+        OPERACIÓN
+    </small>
+
+    <a href="{{ url_for('main.dashboard') }}"
+       class="sidebar-link {% if request.path == '/dashboard' %}active{% endif %}">
+
+        📊 Dashboard
+
+    </a>
+
+    <a href="/fichaje"
+       class="sidebar-link {% if '/fichaje' in request.path %}active{% endif %}">
+
+        🕒 Fichaje
+
+    </a>
+
+    <a href="/asistencias"
+       class="sidebar-link {% if '/asistencias' in request.path %}active{% endif %}">
+
+        📋 Asistencias
+
+    </a>
+
+    <a href="/reportes"
+       class="sidebar-link {% if '/reportes' in request.path %}active{% endif %}">
+
+        📈 Reportes
+
+    </a>
+
+</div>
+
+
+<!-- PERSONAL -->
+{% if current_user.rol == 'admin' %}
+
+<div class="sidebar-section">
+
+    <small class="sidebar-title">
+        PERSONAL
+    </small>
+
+    <a href="/empleados"
+       class="sidebar-link {% if '/empleados' in request.path %}active{% endif %}">
+
+        👥 Empleados
+
+    </a>
+
+    <a href="/puestos"
+       class="sidebar-link {% if '/puestos' in request.path %}active{% endif %}">
+
+        🧩 Puestos
+
+    </a>
+
+    <a href="/usuarios"
+       class="sidebar-link {% if '/usuarios' in request.path %}active{% endif %}">
+
+        🔐 Usuarios
+
+    </a>
+
+</div>
+
+{% endif %}
+
+
+<!-- CONFIGURACION -->
+{% if current_user.rol == 'admin' %}
+
+<div class="sidebar-section">
+
+    <small class="sidebar-title">
+        CONFIGURACIÓN
+    </small>
+
+    <a href="/empresa/configuracion"
+       class="sidebar-link {% if '/empresa' in request.path %}active{% endif %}">
+
+        🏢 Empresa
+
+    </a>
+
+    <a href="/sucursales"
+       class="sidebar-link {% if '/sucursales' in request.path %}active{% endif %}">
+
+        🌐 Sucursales
+
+    </a>
+
+</div>
+
+{% endif %}
+
+
+<!-- SISTEMA -->
+{% if current_user.rol == 'admin' %}
+
+<div class="sidebar-section">
+
+    <small class="sidebar-title">
+        SISTEMA
+    </small>
+
+    <a href="/auditoria"
+       class="sidebar-link {% if '/auditoria' in request.path %}active{% endif %}">
+
+        🧾 Auditoría
+
+    </a>
+
+</div>
+
+{% endif %}
+
+
+
+
+            <div class="sidebar-bottom">
+
+                <a href="/logout"
+                   class="sidebar-link logout-link">
+
+                    🚪 Salir
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- CONTENIDO -->
+    <main class="content-area">
+
+        <div class="container-fluid px-lg-4 px-3">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+
+                        <div class="alert alert-{{ category }}
+                                    alert-dismissible fade show mt-3">
+
+                            {{ message }}
+
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="alert">
+
+                            </button>
+
+                        </div>
+
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="py-4">
+
+                {% block content %}{% endblock %}
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
 
 
 

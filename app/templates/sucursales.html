@@ -48,16 +48,19 @@
 
                             <div>
 
-                                <h5 class="mb-1">
+                                <h5 class="fw-bold mb-1">
                                     {{ s.nombre }}
                                 </h5>
 
-                                <small class="text-muted">
+                                <div class="d-flex align-items-center gap-2 mt-2">
 
-                                    {{ s.empleados|length }}
-                                    empleados
+    <span class="badge bg-light text-dark border">
 
-                                </small>
+        👥 {{ s.empleados|length }} empleados
+
+    </span>
+
+</div>
 
                             </div>
 
@@ -80,92 +83,105 @@
 
                         <!-- SEGURIDAD -->
 
-                        <div class="mb-3">
+<div class="security-box mb-4">
 
-                            <small class="text-muted d-block mb-1">
-                                Seguridad
-                            </small>
+    <div class="d-flex justify-content-between align-items-center mb-3">
 
-                            <div class="small mb-2">
+        <strong>
+            🔐 Seguridad
+        </strong>
 
-                                <strong>IPs:</strong><br>
+        {% if (s.ip_publica or s.ip_rango) and s.geo_activa %}
 
-                                {% if s.ip_publica %}
-                                    <span class="text-break">
-                                        {{ s.ip_publica }}
-                                    </span>
-                                {% else %}
-                                    -
-                                {% endif %}
+            <span class="badge bg-dark">
+                IP + GEO
+            </span>
 
-                            </div>
+        {% elif s.ip_publica or s.ip_rango %}
 
-                            <div class="small mb-2">
+            <span class="badge bg-info text-dark">
+                Solo IP
+            </span>
 
-                                <strong>CIDR:</strong><br>
+        {% elif s.geo_activa %}
 
-                                {% if s.ip_rango %}
-                                    {{ s.ip_rango }}
-                                {% else %}
-                                    -
-                                {% endif %}
+            <span class="badge bg-primary">
+                Solo GEO
+            </span>
 
-                            </div>
+        {% else %}
+
+            <span class="badge bg-success">
+                Libre
+            </span>
+
+        {% endif %}
+
+    </div>
 
 
-                            <div class="small">
+    <div class="security-item">
 
-                                <strong>Geolocalización:</strong>
-                                <div class="small mt-3">
-
-    <strong>Modo:</strong>
-
-    {% if (s.ip_publica or s.ip_rango) and s.geo_activa %}
-
-        <span class="badge bg-dark">
-            🔒 IP + GEO
+        <span>
+            🌐 IP
         </span>
 
-    {% elif s.ip_publica or s.ip_rango %}
+        <small>
 
-        <span class="badge bg-info text-dark">
-            🌐 Solo IP
+            {% if s.ip_publica %}
+                Configurada
+            {% else %}
+                Libre
+            {% endif %}
+
+        </small>
+
+    </div>
+
+
+    <div class="security-item">
+
+        <span>
+            📡 CIDR
         </span>
 
-    {% elif s.geo_activa %}
+        <small>
 
-        <span class="badge bg-primary">
-            📍 Solo GEO
+            {% if s.ip_rango %}
+                Configurado
+            {% else %}
+                Libre
+            {% endif %}
+
+        </small>
+
+    </div>
+
+
+    <div class="security-item">
+
+        <span>
+            📍 GEO
         </span>
 
-    {% else %}
+        <small>
 
-        <span class="badge bg-success">
-            🟢 Libre
-        </span>
+            {% if s.geo_activa %}
+                Activa
+            {% else %}
+                Desactivada
+            {% endif %}
 
-    {% endif %}
+        </small>
+
+    </div>
 
 </div>
-
-                                {% if s.geo_activa %}
-                                    <span class="badge bg-primary">
-                                        📍 Activa
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-light text-dark border">
-                                        Desactivada
-                                    </span>
-                                {% endif %}
-
-                            </div>
-
-                        </div>
 
 
                         <!-- KIOSCO -->
 
-                        <div class="mb-3">
+                        <div class="mb-4">
 
                             {% set k = kioscos_por_sucursal.get(s.id) %}
 
@@ -195,7 +211,7 @@
 
                         <!-- ACCIONES -->
 
-                        <div class="mt-auto d-grid gap-2">
+                        <div class="mt-auto d-grid gap-3">
 
                             <a href="{{ url_for('sucursales.editar_sucursal', id=s.id) }}"
                                class="btn btn-primary btn-sm">
