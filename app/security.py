@@ -12,7 +12,6 @@ def obtener_ip_cliente():
         return request.headers.get('X-Forwarded-For').split(',')[0].strip()
 
     return request.remote_addr
-
 def ip_autorizada_sucursal():
 
     # Si no tiene empleado asociado → permitir (admin, etc)

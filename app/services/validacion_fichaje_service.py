@@ -4,6 +4,7 @@ from app.security import (
     sucursal_requiere_geo,
     obtener_ip_cliente
 )
+from flask_login import current_user
 
 from app.services.geolocalizacion_service import (
     ubicacion_permitida
@@ -21,6 +22,21 @@ def validar_acceso_fichaje(
     latitud=None,
     longitud=None
 ):
+
+    # ==========================================
+    # ADMIN Y SUPERVISOR LIBRES
+    # ==========================================
+
+    if current_user.rol in [
+
+        "admin",
+        "supervisor"
+    ]:
+
+        return {
+            "ok": True,
+            "mensaje": None
+        }
 
     # ==========================================
     # SUCURSAL INACTIVA
