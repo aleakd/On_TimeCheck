@@ -24,7 +24,7 @@ def auditoria():
         AuditLog.query
         .filter_by(empresa_id=current_user.empresa_id)
         .order_by(AuditLog.created_at.desc())
-        .limit(200)
+        .limit(1000)
         .all()
     )
 
